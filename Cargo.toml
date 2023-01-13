@@ -8,8 +8,8 @@ edition = "2021"
 [dependencies]
 
 # Proprietary dependencies
-cooplan-amqp-api = "0.9.0"
-cooplan-amqp-api-shared = "0.1.0"
+cooplan-amqp-api = "0.11.2"
+cooplan-amqp-api-shared = "0.1.2"
 cooplan-lapin-wrapper = "0.5.0"
 cooplan-state-tracker = "0.2.0"
 cooplan-mongodb = "0.1.0"
@@ -38,3 +38,9 @@ lapin = "2.1.1"
 
 #MongoDB
 mongodb = "2.3.1"
+
+# Phone number validation
+phonenumber = "0.3.1+8.12.9"
+
+# Country codes
+celes = "2.4.0"
