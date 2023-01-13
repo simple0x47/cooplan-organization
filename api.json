@@ -1,0 +1,83 @@
+{
+  "input": [
+    {
+      "id": "example",
+      "queue_consumer": {
+        "queue": {
+          "name": "example",
+          "declare": {
+            "options": {
+              "passive": false,
+              "durable": false,
+              "exclusive": false,
+              "auto_delete": true,
+              "nowait": false
+            },
+            "arguments": {}
+          }
+        },
+        "qos": {
+          "prefetch_count": 10,
+          "options": {
+            "global": true
+          }
+        },
+        "consume": {
+          "options": {
+            "no_local": true,
+            "no_ack": false,
+            "exclusive": true,
+            "nowait": false
+          },
+          "arguments": {
+          }
+        },
+        "acknowledge": {
+          "multiple": false
+        },
+        "reject": {
+          "requeue": false
+        }
+      },
+      "max_concurrent_requests": 8
+    }
+  ],
+  "output": [
+    {
+      "id": "example",
+      "queue": {
+        "name": "example",
+        "declare": {
+          "options": {
+            "passive": false,
+            "durable": true,
+            "exclusive": false,
+            "auto_delete": false,
+            "nowait": false
+          },
+          "arguments": {
+            "x-queue-type": {
+              "LongString": [
+                115,
+                116,
+                114,
+                101,
+                97,
+                109
+              ]
+            }
+          }
+        }
+      },
+      "publish": {
+        "exchange": "",
+        "options": {
+          "mandatory": false,
+          "immediate": false,
+          "nowait": false
+        },
+        "properties": {}
+      }
+    }
+  ]
+}

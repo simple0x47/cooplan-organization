@@ -1,0 +1,28 @@
+{
+  "openid_connect": {
+    "jwks_uri": "https://simpleg.eu.auth0.com/.well-known/jwks.json",
+    "issuers": [
+      "https://simpleg.eu.auth0.com/"
+    ],
+    "audience": [
+      "definition-provider.cooplan"
+    ]
+  },
+  "storage_request_dispatch_instances": 4,
+  "storage_requests_boundary": 128,
+  "output_channel_boundary": 1024,
+  "amqp_api_connect": {
+    "uri": "amqp://guest:guest@localhost:5672",
+    "options": {
+      "locale": "en_US",
+      "client_properties": {}
+    },
+    "owned_tls_config": {}
+  },
+  "state_tracking_config": {
+    "state_output_sender_path": "/tmp/cooplan_definition_provider_state_sender.sock",
+    "state_output_receiver_path": "/tmp/cooplan_definition_provider_state_receiver.sock",
+    "state_sender_interval_in_seconds": 15
+  },
+  "state_tracking_channel_boundary": 1024
+}
