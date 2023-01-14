@@ -26,12 +26,9 @@ impl MongoDbRequestDispatch {
                     log::info!("received storage request");
 
                     let result = match request {
-                        StorageRequest::ExampleRequest(action) => {
-                            crate::storage::executors::mongodb_example::execute(
-                                action,
-                                &self.client,
-                            )
-                            .await
+                        StorageRequest::OrganizationRequest(action) => {
+                            crate::storage::executors::organization::execute(action, &self.client)
+                                .await
                         }
                     };
 

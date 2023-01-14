@@ -27,7 +27,6 @@ impl LogicRequestDispatch {
                     log::info!("received logic request");
 
                     let result = match request {
-                        LogicRequest::ExampleRequest(action) => todo!(),
                         _ => {}
                     };
 

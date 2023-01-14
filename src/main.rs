@@ -1,3 +1,5 @@
+extern crate core;
+
 use crate::api::input::elements::example::get;
 use crate::config::config::Config;
 use crate::logic::logic_request::LogicRequest;

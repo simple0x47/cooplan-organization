@@ -8,6 +8,10 @@ pub enum ErrorKind {
     InternalFailure,
     StorageFailure,
     InvalidArgument,
+    InvalidCountry,
+    InvalidTelephone,
+    NameAlreadyTaken,
+    TelephoneAlreadyInUse
 }
 
 impl From<cooplan_amqp_api::error::ErrorKind> for ErrorKind {
