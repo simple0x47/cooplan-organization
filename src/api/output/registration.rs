@@ -8,9 +8,7 @@ pub fn register(
     api: &Api,
     state_tracker: StateTrackerClient,
 ) -> Result<Vec<AmqpOutputElement>, Error> {
-    todo!();
-    let elements: Vec<AmqpOutputElement> =
-        vec![elements::example::get(api, state_tracker.clone())?];
+    let elements: Vec<AmqpOutputElement> = vec![];
 
     Ok(elements)
 }
