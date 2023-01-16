@@ -1,5 +1,5 @@
 [package]
-name = "cooplan-microservice-template"
+name = "cooplan-organization"
 version = "0.1.0"
 edition = "2021"
 
