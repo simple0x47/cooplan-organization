@@ -28,12 +28,13 @@ async def main():
 
     await asyncio.wait_for(input_api.connect(), timeout_after)
 
-    serialized_organization = await asyncio.wait_for(input_api.send_request(REQUEST), timeout_after)
+    serialized_result = await asyncio.wait_for(input_api.send_request(REQUEST), timeout_after)
 
-    organization = json.loads(serialized_organization)
+    print(f"json: {serialized_result}")
+    result = json.loads(serialized_result)
 
-    assert ("Ok" in organization)
-    organization = organization["Ok"]
+    assert ("Ok" in result)
+    organization = result["Ok"]
 
     assert ("id" in organization)
     assert ("name" in organization)
