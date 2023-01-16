@@ -1,6 +1,7 @@
 use async_channel::{Receiver, Sender};
 
 use crate::error::ErrorKind;
+use crate::logic::executors::organization;
 use crate::logic::logic_request::LogicRequest;
 use crate::logic::storage_request::StorageRequest;
 
@@ -27,10 +28,22 @@ impl LogicRequestDispatch {
                     log::info!("received logic request");
 
                     let result = match request {
+                        LogicRequest::OrganizationRequest(organization_action) => {
+                            match organization::execute(
+                                organization_action,
+                                &self.storage_request_sender,
+                            )
+                            .await
+                            {
+                                Ok(_) => (),
+                                Err(error) => {
+                                    log::info!("failed to execute organization action: {}", error);
+                                    continue;
+                                }
+                            }
+                        }
                         _ => {}
                     };
-
-                    todo!()
                 }
                 Err(error) => {
                     // TODO: Block requests until the channel has been reinitialized.
