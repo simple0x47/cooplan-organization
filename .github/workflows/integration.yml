@@ -10,10 +10,10 @@ on:
       ["main"]
 
 env:
-  CARGO_TERM_COLOR: always
+  CARGO_TERM_COLOR: always  
 
 jobs:
-  build:
+  integration:
 
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -23,6 +23,10 @@ jobs:
         image: rabbitmq:3.11
         ports:
           - 5672:5672
+      mongodb:
+        image: mongo:6.0.3
+        ports:
+          - 27017:27017
 
     steps:
     - name: Checkout code
@@ -37,8 +41,7 @@ jobs:
         chmod +x cooplan-organization
         ./cooplan-organization api.json config.json &
       env:
-        GIT_USERNAME: 'simple0x47'
-        GIT_PASSWORD: ${{ secrets.ACCESS_TOKEN }}
+        MONGODB_URI: 'mongodb://localhost:27017'
     - name: Checkout script runner
       uses: actions/checkout@v3
       with:
@@ -54,5 +57,5 @@ jobs:
       env:
           TOKEN_REQUEST_URI: ${{ secrets.TOKEN_REQUEST_URI }}
           TOKEN_REQUEST: ${{ secrets.TOKEN_REQUEST }}
-          AMQP_API_CONNECTION_URI: amqp://guest:guest@127.0.0.1:5672
+          AMQP_API_CONNECTION_URI: 'amqp://guest:guest@localhost:5672'
           TEST_TIMEOUT_AFTER_SECONDS: 15
