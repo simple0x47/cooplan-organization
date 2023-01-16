@@ -1,3 +1,4 @@
+use crate::logic::actions::organization_logic_action::OrganizationLogicAction;
 use crate::logic::logic_request::LogicRequest;
 use async_channel::Sender;
 use cooplan_amqp_api::api::input::input_element;
@@ -81,7 +82,53 @@ async fn create(
         Err(error) => return error,
     };
 
-    RequestResult::Ok(Value::Null)
+    let (replier, receiver) = tokio::sync::oneshot::channel();
+
+    let action = OrganizationLogicAction::Create {
+        name,
+        country,
+        address,
+        telephone,
+        replier,
+    };
+
+    match logic_request_sender
+        .send(LogicRequest::OrganizationRequest(action))
+        .await
+    {
+        Ok(_) => (),
+        Err(error) => {
+            return RequestResult::Err(RequestResultError::new(
+                RequestResultErrorKind::InternalFailure,
+                format!(
+                    "failed to send organization create request to logic: {}",
+                    error
+                ),
+            ))
+        }
+    }
+
+    match receiver.await {
+        Ok(result) => match result {
+            Ok(organization) => RequestResult::Ok(match serde_json::to_value(organization) {
+                Ok(value) => value,
+                Err(error) => {
+                    return RequestResult::Err(RequestResultError::new(
+                        RequestResultErrorKind::InternalFailure,
+                        format!("failed to serialize organization: {}", error),
+                    ))
+                }
+            }),
+            Err(error) => RequestResult::Err(RequestResultError::new(
+                RequestResultErrorKind::MalformedRequest,
+                format!("failed to create organization: {}", error),
+            )),
+        },
+        Err(error) => RequestResult::Err(RequestResultError::new(
+            RequestResultErrorKind::InternalFailure,
+            format!("failed to receive result from logic: {}", error),
+        )),
+    }
 }
 
 fn extract_create_expected_parameters(

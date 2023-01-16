@@ -4,7 +4,9 @@ use crate::logic::storage_request::StorageRequest;
 use crate::logic::validation::country::is_country_code_valid;
 use crate::logic::validation::telephone::is_telephone_valid;
 use async_channel::Sender;
+use serde::Serialize;
 
+#[derive(Serialize)]
 pub struct Organization {
     pub id: String,
     pub name: String,

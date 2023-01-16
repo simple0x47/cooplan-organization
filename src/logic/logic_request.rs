@@ -1,5 +1,5 @@
-use crate::logic::actions::example_logic_action::ExampleLogicAction;
+use crate::logic::actions::organization_logic_action::OrganizationLogicAction;
 
 pub enum LogicRequest {
-    OrganizationRequest(ExampleLogicAction),
+    OrganizationRequest(OrganizationLogicAction),
 }
