@@ -1,10 +1,10 @@
 {
   "input": [
     {
-      "id": "example",
+      "id": "organization",
       "queue_consumer": {
         "queue": {
-          "name": "example",
+          "name": "organization",
           "declare": {
             "options": {
               "passive": false,
