@@ -1,0 +1,58 @@
+name: Integration testing
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore:
+      ["main"]
+  pull_request:
+    branches:
+      ["main"]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    services:
+      rabbitmq:
+        image: rabbitmq:3.11
+        ports:
+          - 5672:5672
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --release --verbose
+    - name: Run unit tests
+      run: cargo test --verbose
+    - name: Run organization in background
+      run: |
+        mv ./target/release/cooplan-organization ./cooplan-organization
+        chmod +x cooplan-organization
+        ./cooplan-organization api.json config.json &
+      env:
+        GIT_USERNAME: 'simple0x47'
+        GIT_PASSWORD: ${{ secrets.ACCESS_TOKEN }}
+    - name: Checkout script runner
+      uses: actions/checkout@v3
+      with:
+        repository: 'simple0x47/cooplan-script-runner'
+        path: 'script_runner'
+    - name: Run integration tests
+      run: |
+        export PYTHONPATH=$(realpath ./integration_tests/)
+        TOKEN_RESPONSE=$(curl --request POST --url $TOKEN_REQUEST_URI --header 'content-type: application/json' --data $TOKEN_REQUEST)
+        TOKEN=$(echo $TOKEN_RESPONSE | jq --raw-output '.access_token')
+        mv ./script_runner/script_runner.py ./script_runner.py
+        python3 script_runner.py ./integration_tests/ $TOKEN
+      env:
+          TOKEN_REQUEST_URI: ${{ secrets.TOKEN_REQUEST_URI }}
+          TOKEN_REQUEST: ${{ secrets.TOKEN_REQUEST }}
+          AMQP_API_CONNECTION_URI: amqp://guest:guest@127.0.0.1:5672
+          TEST_TIMEOUT_AFTER_SECONDS: 15
