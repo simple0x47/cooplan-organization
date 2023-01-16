@@ -13,7 +13,7 @@ pub struct Config {
     pub storage_request_dispatch_instances: u16,
     pub storage_requests_boundary: usize,
     pub output_channel_boundary: usize,
-    pub amqp_api_connect: AmqpConnectConfig,
+    pub amqp_connect_config: AmqpConnectConfig,
     pub state_tracking_config: StateTrackingConfig,
     pub state_tracking_channel_boundary: usize,
 }

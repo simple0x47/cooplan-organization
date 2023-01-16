@@ -8,6 +8,8 @@
       "definition-provider.cooplan"
     ]
   },
+  "logic_request_dispatch_instances": 4,
+  "logic_requests_boundary": 128,
   "storage_request_dispatch_instances": 4,
   "storage_requests_boundary": 128,
   "output_channel_boundary": 1024,
