@@ -17,6 +17,7 @@ pub async fn execute(action: OrganizationStorageAction, client: &Client) -> Resu
             telephone,
             replier,
         } => create(name, country, address, telephone, replier, client).await?,
+        _ => todo!(),
     }
 
     Ok(())
