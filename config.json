@@ -5,7 +5,7 @@
       "https://simpleg.eu.auth0.com/"
     ],
     "audience": [
-      "definition-provider.cooplan"
+      "organization.cooplan"
     ]
   },
   "logic_request_dispatch_instances": 4,
