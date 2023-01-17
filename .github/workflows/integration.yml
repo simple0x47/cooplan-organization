@@ -3,6 +3,11 @@ name: Integration testing
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+        cache-key:
+          required: false
+          type: string
+          default: ${{ format( "integration-{0}, $GITHUB_RUN_NUMBER ) }}
   push:
     branches-ignore:
       ["main"]
@@ -11,11 +16,13 @@ on:
       ["main"]
 
 env:
-  CARGO_TERM_COLOR: always  
+  CARGO_TERM_COLOR: always
 
 jobs:
   build:
     uses: simple0x47/cooplan-organization/.github/workflows/build.yml@main
+    with:
+      cache-key: ${{ inputs.cache-key }}
   integration:
     needs: build
     runs-on: ubuntu-latest
@@ -32,15 +39,6 @@ jobs:
           - 27017:27017
 
     steps:
-    - name: Output directory
-      run: |
-        echo Current
-        echo $(ls)
-        cd ../
-        echo One back
-        echo $(ls)
-    - name: Run unit tests
-      run: cargo test --verbose
     - name: Run organization in background
       run: |
         mv ./target/release/cooplan-organization ./cooplan-organization
