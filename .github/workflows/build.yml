@@ -38,4 +38,4 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./cache
-          key: format("build-{0}", ${{ inputs.cache-key }})
+          key: ${{ format("build-{0}", inputs.cache-key) }}
