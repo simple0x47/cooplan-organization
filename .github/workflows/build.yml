@@ -39,5 +39,5 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ inputs.cache-key }}
-          path: ${{ format('{0}.zip', inputs.cache-key) }}
+          name: ${{ format('build-{0}', inputs.cache-key) }}
+          path: ${{ format('build-{0}.zip', inputs.cache-key) }}
