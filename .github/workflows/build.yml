@@ -2,10 +2,14 @@ name: Build
 
 on:
   workflow_call:
+    inputs:
+      cache-key:
+        required: true
+        type: string
 
 env:
   CARGO_TERM_COLOR: always
-
+    
 jobs:
   build:
 
@@ -21,3 +25,16 @@ jobs:
           cache-on-failure: "true"
       - name: Build
         run: cargo build --release --verbose
+      - name: Run unit tests
+        run: cargo test --verbose
+      - name: Prepare cache package
+        run: |
+          mkdir cache
+          
+          mv ./target/release/cooplan-organization ./cache/cooplan-organization
+          mv ./api.json ./cache/api.json
+          mv ./config.json ./cache/config.json
+      - name: Cache package for integration testing
+        with:
+          path: ./cache
+          key: format("build-{0}", ${{ inputs.cache-key }})
