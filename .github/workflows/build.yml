@@ -35,6 +35,7 @@ jobs:
           mv ./api.json ./cache/api.json
           mv ./config.json ./cache/config.json
       - name: Cache package for integration testing
+        uses: actions/cache@v3
         with:
           path: ./cache
           key: format("build-{0}", ${{ inputs.cache-key }})
