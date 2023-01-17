@@ -32,7 +32,9 @@ jobs:
       with:
           name: ${{ format('build-ci-{0}', github.run_id) }}
     - name: Decompress artifacts
-      run: unzip ${{ format('build-ci-{0}.zip', github.run_id) }}
+      run: | 
+        unzip ${{ format('build-ci-{0}.zip', github.run_id) }}
+        mv ./cache/* ./
     - name: Create release tag
       id: create_release_tag
       run: |
@@ -54,7 +56,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.CUSTOM_RELEASE_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/release/cooplan-organization
+        asset_path: ./cooplan-organization
         asset_name: cooplan-organization
         asset_content_type: application/x-elf
     - name: Upload config.json
