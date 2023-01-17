@@ -8,6 +8,11 @@ on:
           required: false
           type: string
           default: ${{ format('integration-{0}', github.run_id) }}
+    secrets:
+      TOKEN_REQUEST_URI:
+        required: true
+      TOKEN_REQUEST:
+        required: true
   push:
     branches-ignore:
       ["main"]
