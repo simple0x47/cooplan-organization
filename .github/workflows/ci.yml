@@ -19,11 +19,13 @@ jobs:
     timeout-minutes: 10
     
     steps:
-    - name: Get Build's cache
-      uses: actions/cache@v3
+    - name: Download Build's artifacts
+      uses: actions/download-artifact@v3
       with:
-        path: './'
-        key: ${{ format('build-ci-{0}', github.run_id) }}
+        name: ${{ format('build-ci-{0}', github.run_id) }}
+        path: ./
+    - name: Decompress artifacts
+      run: unzip ${{ format('build-ci-{0}.zip', github.run_id) }}
     - name: Create release tag
       id: create_release_tag
       run: |
@@ -66,3 +68,7 @@ jobs:
         asset_path: ./api.json
         asset_name: api.json
         asset_content_type: application/json
+    - name: Delete Build's artifacts
+      uses: geekyeggo/delete-artifact@v2
+      with:
+          name: ${{ format('build-ci-{0}', github.run_id) }}
