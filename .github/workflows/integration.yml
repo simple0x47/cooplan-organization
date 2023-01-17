@@ -39,9 +39,15 @@ jobs:
           - 27017:27017
 
     steps:
+    - name: Get Build's cache
+      uses: actions/cache@v3
+      with:
+        path: './'
+        key: ${{ format('build-{0}', inputs.cache-key }}
     - name: Run organization in background
       run: |
-        mv ./target/release/cooplan-organization ./cooplan-organization
+        echo Current directory
+        echo $(ls)
         chmod +x cooplan-organization
         ./cooplan-organization api.json config.json &
       env:
