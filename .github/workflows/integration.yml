@@ -43,7 +43,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: './'
-        key: ${{ format('build-{0}', inputs.cache-key }}
+        key: ${{ format('build-{0}', inputs.cache-key) }}
     - name: Run organization in background
       run: |
         echo Current directory
