@@ -17,6 +17,12 @@ pub async fn execute(action: OrganizationStorageAction, client: &Client) -> Resu
             telephone,
             replier,
         } => create(name, country, address, telephone, replier, client).await?,
+        OrganizationStorageAction::FindByName { name, replier } => {
+            find_by_key_and_value("name", &name, replier, client).await?
+        }
+        OrganizationStorageAction::FindByTelephone { telephone, replier } => {
+            find_by_key_and_value("telephone", &telephone, replier, client).await?
+        }
         _ => todo!(),
     }
 
@@ -89,6 +95,57 @@ async fn create(
 
 fn create_handle_error(
     replier: Sender<Result<Organization, Error>>,
+    error: Error,
+) -> Result<(), Error> {
+    match replier.send(Err(error.clone())) {
+        Ok(_) => (),
+        Err(_) => log::error!("failed to reply to logic"),
+    }
+
+    Err(error)
+}
+
+async fn find_by_key_and_value(
+    key: &str,
+    value: &str,
+    replier: Sender<Result<Option<Organization>, Error>>,
+    client: &Client,
+) -> Result<(), Error> {
+    let result: Option<Organization> = match client
+        .database(DATABASE)
+        .collection(COLLECTION)
+        .find_one(doc! { key: value }, None)
+        .await
+    {
+        Ok(result) => result,
+        Err(error) => {
+            return find_by_key_and_value_handle_error(
+                replier,
+                Error::new(
+                    ErrorKind::InternalFailure,
+                    format!("failed to find organization: {}", error),
+                ),
+            )
+        }
+    };
+
+    match replier.send(Ok(result)) {
+        Ok(_) => (),
+        Err(_) => {
+            log::error!("failed to send response to logic");
+
+            return Err(Error::new(
+                ErrorKind::InternalFailure,
+                "failed to send response to logic",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn find_by_key_and_value_handle_error(
+    replier: Sender<Result<Option<Organization>, Error>>,
     error: Error,
 ) -> Result<(), Error> {
     match replier.send(Err(error.clone())) {
