@@ -39,6 +39,8 @@ jobs:
           - 27017:27017
 
     steps:
+    - name: Wait 5 seconds
+      run: sleep 5
     - name: Get Build's cache
       uses: actions/cache@v3
       with:
