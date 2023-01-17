@@ -15,16 +15,8 @@ jobs:
     needs: integration
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
     steps:
-    - name: Checkout definition provider
-      uses: actions/checkout@v3
-    - name: Cache 
-      uses: Swatinem/rust-cache@v2.2.0
-      with:
-        cache-on-failure: "true"
-    - name: Build
-      run: cargo build --release
     - name: Create release tag
       id: create_release_tag
       run: |
