@@ -1,4 +1,4 @@
-name: CI
+name: Continuous integration
 
 on:
   push:
@@ -10,7 +10,7 @@ env:
   
 jobs:
   integration:
-    uses: simple0x47/organization/.github/workflows/integration.yml@main
+    uses: simple0x47/cooplan-organization/.github/workflows/integration.yml@main
   release:
     needs: integration
     runs-on: ubuntu-latest
