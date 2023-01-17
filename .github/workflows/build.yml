@@ -35,7 +35,7 @@ jobs:
           mv ./api.json ./cache/api.json
           mv ./config.json ./cache/config.json
       - name: Compress artifacts
-        run: zip -r ${{ inputs.cache-key }}.zip ./cache/
+        run: zip -r ${{ format('build-{0}.zip', inputs.cache-key) }} ./cache/
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
