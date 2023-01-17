@@ -9,7 +9,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  BUILD_CACHE_KEY: ${{ format("build-{0}", inputs.cache-key) }}
+  BUILD_CACHE_KEY: ${{ format('build-{0}', inputs.cache-key) }}
     
 jobs:
   build:
