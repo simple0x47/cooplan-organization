@@ -7,7 +7,7 @@ on:
         cache-key:
           required: false
           type: string
-          default: ${{ format("integration-{0}", env.GITHUB_RUN_NUMBER) }}
+          default: ${{ env.GITHUB_RUN_NUMBER }}
   push:
     branches-ignore:
       ["main"]
