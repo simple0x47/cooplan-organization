@@ -9,7 +9,6 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  BUILD_CACHE_KEY: ${{ format('build-{0}', inputs.cache-key) }}
     
 jobs:
   build:
@@ -39,4 +38,4 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ./cache
-          key: $BUILD_CACHE_KEY
+          key: ${{ format('build-{0}', inputs.cache-key) }}
