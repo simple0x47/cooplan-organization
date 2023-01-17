@@ -1,6 +1,5 @@
 # Organization
-[![Integration testing](https://github.com/simple0x47/cooplan-organization/actions/workflows/integration.yml/badge.svg)](https://github.com/simple0x47/cooplan-organization/actions/workflows/integration.yml)
-[![Release](https://github.com/simple0x47/cooplan-organization/actions/workflows/release.yml/badge.svg)](https://github.com/simple0x47/cooplan-organization/actions/workflows/release.yml)
+[![Continuous integration](https://github.com/simple0x47/cooplan-organization/actions/workflows/ci.yml/badge.svg)](https://github.com/simple0x47/cooplan-organization/actions/workflows/ci.yml)
 
 Microservice in charge of storing & managing organizations and their users.
 
