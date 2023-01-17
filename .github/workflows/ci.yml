@@ -10,11 +10,7 @@ env:
   
 jobs:
   integration:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - name: Run integration workflow
-        uses: simple0x47/organization/.github/workflows/integration.yml@latest
+    uses: simple0x47/organization/.github/workflows/integration.yml@main
   release:
     needs: integration
     runs-on: ubuntu-latest
