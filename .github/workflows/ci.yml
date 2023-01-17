@@ -11,12 +11,19 @@ env:
 jobs:
   integration:
     uses: simple0x47/cooplan-organization/.github/workflows/integration.yml@main
+    with:
+      cache-key: ${{ format('ci-{0}', github.run_id) }}
   release:
     needs: integration
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
     steps:
+    - name: Get Build's cache
+      uses: actions/cache@v3
+      with:
+        path: './'
+        key: ${{ format('build-ci-{0}', github.run_id) }}
     - name: Create release tag
       id: create_release_tag
       run: |
