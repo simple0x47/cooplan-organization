@@ -32,6 +32,13 @@ jobs:
           - 27017:27017
 
     steps:
+    - name: Output directory
+      run: |
+        echo Current
+        echo $(ls)
+        cd ../
+        echo One back
+        echo $(ls)
     - name: Run unit tests
       run: cargo test --verbose
     - name: Run organization in background
