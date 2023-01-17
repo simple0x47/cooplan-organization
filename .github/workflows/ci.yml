@@ -1,18 +1,22 @@
-name: Release
+name: CI
 
 on:
-  workflow_run:
-    workflows: [Integration testing]
-    types: [completed]
-    branches: [main]
-
+  push:
+    branches:
+      ["main"]
 
 env:
   CARGO_TERM_COLOR: always
   
 jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Run integration workflow
+        uses: simple0x47/organization/.github/workflows/integration.yml@latest
   release:
-  
+    needs: integration
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
