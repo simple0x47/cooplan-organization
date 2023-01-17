@@ -4,6 +4,8 @@ on:
   workflow_dispatch:
   workflow_call:
   push:
+    branches-ignore:
+      ["main"]
   pull_request:
     branches:
       ["main"]
