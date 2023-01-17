@@ -34,8 +34,10 @@ jobs:
           mv ./target/release/cooplan-organization ./cache/cooplan-organization
           mv ./api.json ./cache/api.json
           mv ./config.json ./cache/config.json
-      - name: Cache package for integration testing
-        uses: actions/cache/save@v3
+      - name: Compress artifacts
+        run: zip -r ${{ inputs.cache-key }}.zip ./cache/
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
         with:
-          path: ./cache/
-          key: ${{ format('build-{0}', inputs.cache-key) }}
+          name: ${{ inputs.cache-key }}
+          path: ${{ format('{0}.zip', inputs.cache-key) }}
