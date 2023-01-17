@@ -26,12 +26,12 @@ jobs:
     - name: Create release tag
       id: create_release_tag
       run: |
-        echo ::set-output name=tag_name::"inc.$GITHUB_RUN_NUMBER"
+        echo "tag_name=inc.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
     - name: Create release
       id: create_release
       uses: actions/create-release@v1
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.CUSTOM_RELEASE_TOKEN }}
       with:
         tag_name: ${{ steps.create_release_tag.outputs.tag_name }}
         release_name: ${{ format('Release {0}', steps.create_release_tag.outputs.tag_name) }}
