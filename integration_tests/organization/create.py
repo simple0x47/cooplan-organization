@@ -48,7 +48,7 @@ async def create_organization_and_expect_it_as_response():
 
 
 async def main():
-    asyncio.run(create_organization_and_expect_it_as_response())
+    await create_organization_and_expect_it_as_response()
 
 
 if __name__ == "__main__":
