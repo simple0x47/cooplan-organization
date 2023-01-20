@@ -52,6 +52,7 @@ async fn create(
                 "country": &country,
                 "address": &address,
                 "telephone": &telephone,
+                "permissions": []
             },
             None,
         )
@@ -110,6 +111,7 @@ async fn create(
         country,
         address,
         telephone,
+        permissions: Vec::new(),
     };
 
     match replier.send(Ok(organization)) {

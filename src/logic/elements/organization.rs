@@ -7,4 +7,5 @@ pub struct Organization {
     pub country: String,
     pub address: String,
     pub telephone: String,
+    pub permissions: Vec<String>,
 }
