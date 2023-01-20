@@ -10,6 +10,10 @@ pub enum UserStorageAction {
         organization: UserOrganization,
         replier: Sender<Result<User, Error>>,
     },
+    Delete {
+        id: String,
+        replier: Sender<Result<(), Error>>,
+    },
     FindUserById {
         user_id: String,
         replier: Sender<Result<Option<User>, Error>>,

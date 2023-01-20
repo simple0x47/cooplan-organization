@@ -1,8 +1,8 @@
 use crate::error::{Error, ErrorKind};
+use crate::logic;
 use crate::logic::actions::user_storage_action::UserStorageAction;
 use crate::logic::elements::user_organization::UserOrganization;
 use crate::storage::elements::user::User;
-use crate::{logic, storage};
 use cooplan_util::error_handler::ErrorHandler;
 use mongodb::bson::{doc, Bson};
 use mongodb::Client;
@@ -15,6 +15,7 @@ pub async fn execute(action: UserStorageAction, client: &Client) -> Result<(), E
             organization,
             replier,
         } => create(id, organization, replier, client).await?,
+        UserStorageAction::Delete { id, replier } => delete(id, replier, client).await?,
         UserStorageAction::FindUserById { user_id, replier } => {
             find_user_by_id(user_id, replier, client).await?;
         }
