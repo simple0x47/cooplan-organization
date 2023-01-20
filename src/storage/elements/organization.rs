@@ -16,6 +16,7 @@ pub struct Organization {
     pub country: String,
     pub address: String,
     pub telephone: String,
+    pub permissions: Vec<String>,
 }
 
 impl Into<logic::elements::organization::Organization> for Organization {
@@ -26,6 +27,7 @@ impl Into<logic::elements::organization::Organization> for Organization {
             country: self.country,
             address: self.address,
             telephone: self.telephone,
+            permissions: self.permissions,
         }
     }
 }
