@@ -4,6 +4,7 @@ use tokio::sync::oneshot::Sender;
 
 pub enum OrganizationLogicAction {
     Create {
+        user_id: String,
         name: String,
         country: String,
         address: String,

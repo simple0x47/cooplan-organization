@@ -7,19 +7,19 @@ import os
 
 TEST_TIMEOUT_AFTER_SECONDS_ENV = "TEST_TIMEOUT_AFTER_SECONDS"
 
-REQUEST = {
-    "header": {
-        "element": "organization",
-        "action": "create"
-    },
-    "name": "Organization Test #1234",
-    "country": "RO",
-    "address": "Strada Exemplu Nr.15",
-    "telephone": "+40753313640"
-}
 
+async def create_organization_and_expect_it_as_response():
+    REQUEST = {
+        "header": {
+            "element": "organization",
+            "action": "create"
+        },
+        "name": "Organization Test #1234",
+        "country": "RO",
+        "address": "Strada Exemplu Nr.15",
+        "telephone": "+40753313640"
+    }
 
-async def main():
     test.init_request(REQUEST)
 
     input_api = amqp_input_api.AmqpInputApi(amqp_config.REQUEST_AMQP_CONFIG, amqp_config.RESPONSE_AMQP_CONFIG)
@@ -30,7 +30,6 @@ async def main():
 
     serialized_result = await asyncio.wait_for(input_api.send_request(REQUEST), timeout_after)
 
-    print(f"json: {serialized_result}")
     result = json.loads(serialized_result)
 
     assert ("Ok" in result)
@@ -46,6 +45,10 @@ async def main():
     assert (REQUEST["country"] == organization["country"])
     assert (REQUEST["address"] == organization["address"])
     assert (REQUEST["telephone"] == organization["telephone"])
+
+
+async def main():
+    await create_organization_and_expect_it_as_response()
 
 
 if __name__ == "__main__":
