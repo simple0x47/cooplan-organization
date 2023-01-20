@@ -1,12 +1,10 @@
 use crate::error::{Error, ErrorKind};
 use crate::logic::actions::organization_storage_action::OrganizationStorageAction;
-use crate::logic::elements::organization::Organization;
+use crate::storage::elements::organization::Organization;
+use crate::{logic, storage};
 use mongodb::bson::doc;
 use mongodb::Client;
 use tokio::sync::oneshot::Sender;
-
-const DATABASE: &str = "local";
-const COLLECTION: &str = "organization";
 
 pub async fn execute(action: OrganizationStorageAction, client: &Client) -> Result<(), Error> {
     match action {
@@ -23,7 +21,12 @@ pub async fn execute(action: OrganizationStorageAction, client: &Client) -> Resu
         OrganizationStorageAction::FindByTelephone { telephone, replier } => {
             find_by_key_and_value("telephone", &telephone, replier, client).await?
         }
-        _ => todo!(),
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidArgument,
+                format!("unhandled action detected: {:?}", action),
+            ));
+        }
     }
 
     Ok(())
@@ -34,12 +37,12 @@ async fn create(
     country: String,
     address: String,
     telephone: String,
-    replier: Sender<Result<Organization, Error>>,
+    replier: Sender<Result<logic::elements::organization::Organization, Error>>,
     client: &Client,
 ) -> Result<(), Error> {
     let organization_id = match client
-        .database(DATABASE)
-        .collection(COLLECTION)
+        .database(storage::elements::organization::DATABASE)
+        .collection(storage::elements::organization::COLLECTION)
         .insert_one(
             doc! {
                 "name": &name,
@@ -54,9 +57,37 @@ async fn create(
         Ok(result) => match result.inserted_id.as_object_id() {
             Some(organization_id) => organization_id.to_string(),
             None => {
-                let error = Error::new(ErrorKind::InternalFailure, "failed to get organization id");
+                return match client
+                    .database(storage::elements::organization::DATABASE)
+                    .collection::<Organization>(storage::elements::organization::COLLECTION)
+                    .delete_one(
+                        doc! {
+                            "name": &name,
+                            "country": &country,
+                            "address": &address,
+                            "telephone": &telephone,
+                        },
+                        None,
+                    )
+                    .await
+                {
+                    Ok(_) => {
+                        let error = Error::new(
+                            ErrorKind::ProcessReversion,
+                            "failed to get organization id, process reverted",
+                        );
 
-                return create_handle_error(replier, error);
+                        create_handle_error(replier, error)
+                    }
+                    Err(error) => {
+                        let error = Error::new(
+                            ErrorKind::InternalFailure,
+                            format!("failed to revert process: {}", error),
+                        );
+
+                        create_handle_error(replier, error)
+                    }
+                }
             }
         },
         Err(error) => {
@@ -70,7 +101,7 @@ async fn create(
         }
     };
 
-    let organization = Organization {
+    let organization = logic::elements::organization::Organization {
         id: organization_id,
         name,
         country,
@@ -94,7 +125,7 @@ async fn create(
 }
 
 fn create_handle_error(
-    replier: Sender<Result<Organization, Error>>,
+    replier: Sender<Result<logic::elements::organization::Organization, Error>>,
     error: Error,
 ) -> Result<(), Error> {
     match replier.send(Err(error.clone())) {
@@ -108,12 +139,12 @@ fn create_handle_error(
 async fn find_by_key_and_value(
     key: &str,
     value: &str,
-    replier: Sender<Result<Option<Organization>, Error>>,
+    replier: Sender<Result<Option<logic::elements::organization::Organization>, Error>>,
     client: &Client,
 ) -> Result<(), Error> {
-    let result: Option<Organization> = match client
-        .database(DATABASE)
-        .collection(COLLECTION)
+    let result: Option<logic::elements::organization::Organization> = match client
+        .database(storage::elements::organization::DATABASE)
+        .collection(storage::elements::organization::COLLECTION)
         .find_one(doc! { key: value }, None)
         .await
     {
@@ -145,7 +176,7 @@ async fn find_by_key_and_value(
 }
 
 fn find_by_key_and_value_handle_error(
-    replier: Sender<Result<Option<Organization>, Error>>,
+    replier: Sender<Result<Option<logic::elements::organization::Organization>, Error>>,
     error: Error,
 ) -> Result<(), Error> {
     match replier.send(Err(error.clone())) {
@@ -154,4 +185,39 @@ fn find_by_key_and_value_handle_error(
     }
 
     Err(error)
+}
+
+#[cfg(test)]
+#[tokio::test]
+#[ignore]
+async fn create_organization_successfully() {
+    let uri = match std::env::var("MONGODB_URI") {
+        Ok(uri) => uri,
+        Err(_) => {
+            panic!("MONGODB_URI environment variable not set");
+        }
+    };
+
+    let client = Client::with_uri_str(uri).await.unwrap();
+    let (replier, receiver) = tokio::sync::oneshot::channel();
+
+    let result = create(
+        "test".to_string(),
+        "test".to_string(),
+        "test".to_string(),
+        "+40753313640".to_string(),
+        replier,
+        &client,
+    )
+    .await;
+
+    // Avoid test failures if repeated on the same MongoDB instance.
+    client
+        .database(storage::elements::organization::DATABASE)
+        .collection::<Organization>(storage::elements::organization::COLLECTION)
+        .drop(None)
+        .await
+        .unwrap();
+
+    assert!(result.is_ok());
 }

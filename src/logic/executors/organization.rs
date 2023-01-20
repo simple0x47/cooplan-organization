@@ -4,6 +4,7 @@ pub async fn execute(
 ) -> Result<(), Error> {
     match action {
         OrganizationLogicAction::Create {
+            user_id,
             name,
             country,
             address,
@@ -11,6 +12,7 @@ pub async fn execute(
             replier,
         } => {
             create(
+                user_id,
                 name,
                 country,
                 address,
@@ -24,6 +26,7 @@ pub async fn execute(
 }
 
 async fn create(
+    user_id: String,
     name: String,
     country: String,
     address: String,
@@ -43,7 +46,21 @@ async fn create(
         return create_handle_error(replier, error);
     }
 
-    match is_name_already_used(&name, &storage_request_sender).await {
+    match can_user_create_organization(&user_id, storage_request_sender).await {
+        Ok(can_create) => {
+            if !can_create {
+                let error = Error::new(
+                    ErrorKind::UserCannotCreateOrganization,
+                    "user cannot create an organization",
+                );
+
+                return create_handle_error(replier, error);
+            }
+        }
+        Err(error) => return create_handle_error(replier, error),
+    }
+
+    match is_name_already_used(&name, storage_request_sender).await {
         Ok(is_used) => {
             if is_used {
                 let error = Error::new(ErrorKind::NameAlreadyTaken, "name is already being used");
@@ -54,7 +71,7 @@ async fn create(
         Err(error) => return create_handle_error(replier, error),
     }
 
-    match is_telephone_being_used(&telephone, &storage_request_sender).await {
+    match is_telephone_being_used(&telephone, storage_request_sender).await {
         Ok(is_used) => {
             if is_used {
                 let error = Error::new(
@@ -111,6 +128,8 @@ async fn create(
         }
     };
 
+    // TODO: create user and add it to the organization
+
     match replier.send(Ok(organization)) {
         Ok(_) => (),
         Err(error) => {
@@ -146,6 +165,7 @@ use crate::logic::storage_request::StorageRequest;
 use crate::logic::validation::country::is_country_code_valid;
 use crate::logic::validation::name::is_name_already_used;
 use crate::logic::validation::telephone::{is_telephone_being_used, is_telephone_valid};
+use crate::logic::validation::user::can_user_create_organization;
 use async_channel::Sender;
 #[cfg(test)]
 use phonenumber::country::RO;

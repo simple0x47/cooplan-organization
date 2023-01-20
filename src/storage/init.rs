@@ -1,8 +1,10 @@
 use crate::error::{Error, ErrorKind};
 use crate::logic::storage_request::StorageRequest;
+use crate::storage;
 use async_channel::Receiver;
 use cooplan_mongodb::config::mongodb_config;
 use cooplan_mongodb::connection_manager::MongoDbConnectionManager;
+use mongodb::Client;
 
 pub async fn initialize(
     concurrent_dispatchers: u16,
@@ -25,6 +27,8 @@ pub async fn initialize(
 
     let client = mongodb_connection_manager.client();
 
+    initialize_elements(client).await?;
+
     for _ in 0..concurrent_dispatchers {
         let mongodb_request_dispatch =
             crate::storage::mongodb_request_dispatch::MongoDbRequestDispatch::new(
@@ -34,6 +38,12 @@ pub async fn initialize(
 
         tokio::spawn(mongodb_request_dispatch.run());
     }
+
+    Ok(())
+}
+
+async fn initialize_elements(client: &Client) -> Result<(), Error> {
+    storage::elements::organization::initialize(client).await?;
 
     Ok(())
 }

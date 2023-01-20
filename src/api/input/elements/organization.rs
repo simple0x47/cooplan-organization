@@ -77,6 +77,24 @@ async fn create(
     data: Map<String, Value>,
     logic_request_sender: Sender<LogicRequest>,
 ) -> RequestResult {
+    let user_id = match authorized_token.get("sub") {
+        Some(user_id) => match user_id.as_str() {
+            Some(user_id) => user_id.to_string(),
+            None => {
+                return RequestResult::Err(RequestResultError::new(
+                    RequestResultErrorKind::MalformedRequest,
+                    "failed to read user id from token",
+                ))
+            }
+        },
+        None => {
+            return RequestResult::Err(RequestResultError::new(
+                RequestResultErrorKind::MalformedRequest,
+                "failed to read user id from token",
+            ))
+        }
+    };
+
     let (name, country, address, telephone) = match extract_create_expected_parameters(data) {
         Ok((name, country, address, telephone)) => (name, country, address, telephone),
         Err(error) => return error,
@@ -85,6 +103,7 @@ async fn create(
     let (replier, receiver) = tokio::sync::oneshot::channel();
 
     let action = OrganizationLogicAction::Create {
+        user_id,
         name,
         country,
         address,
@@ -108,17 +127,15 @@ async fn create(
         }
     }
 
-    match receiver.await {
+    let result = match receiver.await {
         Ok(result) => match result {
-            Ok(organization) => RequestResult::Ok(match serde_json::to_value(organization) {
-                Ok(value) => value,
-                Err(error) => {
-                    return RequestResult::Err(RequestResultError::new(
-                        RequestResultErrorKind::InternalFailure,
-                        format!("failed to serialize organization: {}", error),
-                    ))
-                }
-            }),
+            Ok(organization) => match serde_json::to_value(organization) {
+                Ok(value) => RequestResult::Ok(value),
+                Err(error) => RequestResult::Err(RequestResultError::new(
+                    RequestResultErrorKind::InternalFailure,
+                    format!("failed to serialize organization: {}", error),
+                )),
+            },
             Err(error) => RequestResult::Err(RequestResultError::new(
                 RequestResultErrorKind::MalformedRequest,
                 format!("failed to create organization: {}", error),
@@ -128,7 +145,9 @@ async fn create(
             RequestResultErrorKind::InternalFailure,
             format!("failed to receive result from logic: {}", error),
         )),
-    }
+    };
+
+    result
 }
 
 fn extract_create_expected_parameters(

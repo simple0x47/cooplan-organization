@@ -30,6 +30,7 @@ impl MongoDbRequestDispatch {
                             crate::storage::executors::organization::execute(action, &self.client)
                                 .await
                         }
+                        _ => todo!(),
                     };
 
                     if let Err(error) = result {

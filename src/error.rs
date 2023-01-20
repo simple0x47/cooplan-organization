@@ -11,7 +11,9 @@ pub enum ErrorKind {
     InvalidCountry,
     InvalidTelephone,
     NameAlreadyTaken,
-    TelephoneAlreadyInUse
+    TelephoneAlreadyInUse,
+    UserCannotCreateOrganization,
+    ProcessReversion,
 }
 
 impl From<cooplan_amqp_api::error::ErrorKind> for ErrorKind {

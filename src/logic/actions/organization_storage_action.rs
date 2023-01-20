@@ -2,6 +2,7 @@ use crate::error::Error;
 use crate::logic::elements::organization::Organization;
 use tokio::sync::oneshot::Sender;
 
+#[derive(Debug)]
 pub enum OrganizationStorageAction {
     Create {
         name: String,
