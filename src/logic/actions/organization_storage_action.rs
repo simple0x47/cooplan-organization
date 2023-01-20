@@ -11,6 +11,10 @@ pub enum OrganizationStorageAction {
         telephone: String,
         replier: Sender<Result<Organization, Error>>,
     },
+    Delete {
+        id: String,
+        replier: Sender<Result<(), Error>>,
+    },
     FindByName {
         name: String,
         replier: Sender<Result<Option<Organization>, Error>>,

@@ -13,6 +13,7 @@ cooplan-amqp-api-shared = "0.1.2"
 cooplan-lapin-wrapper = "0.5.0"
 cooplan-state-tracker = "0.2.0"
 cooplan-mongodb = "0.1.0"
+cooplan-util = "0.1.1"
 
 # JSON Serialization
 serde = { version = "1.0.141", features = ["derive"] }

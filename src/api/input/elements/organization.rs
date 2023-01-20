@@ -14,7 +14,7 @@ use cooplan_lapin_wrapper::config::api::Api;
 use serde_json::{Map, Value};
 use std::sync::Arc;
 
-const ACTIONS: &[&str] = &["create", "read", "update", "delete", "request_access"];
+const ACTIONS: &[&str] = &["create", "read", "update", "delete", "request_permission"];
 
 pub fn get(api: &Api) -> Result<InputElement<LogicRequest>, Error> {
     const ELEMENT_ID: &str = "organization";

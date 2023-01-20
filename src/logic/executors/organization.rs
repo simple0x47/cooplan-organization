@@ -1,3 +1,15 @@
+use crate::error::{Error, ErrorKind};
+use crate::logic::actions::organization_logic_action::OrganizationLogicAction;
+use crate::logic::actions::organization_storage_action::OrganizationStorageAction;
+use crate::logic::elements::organization::Organization;
+use crate::logic::storage_request::StorageRequest;
+use crate::logic::validation::country::is_country_code_valid;
+use crate::logic::validation::name::is_name_already_used;
+use crate::logic::validation::telephone::{is_telephone_being_used, is_telephone_valid};
+use crate::logic::validation::user::can_user_create_organization;
+use async_channel::Sender;
+use cooplan_util::error_handler::ErrorHandler;
+
 pub async fn execute(
     action: OrganizationLogicAction,
     storage_request_sender: &Sender<StorageRequest>,
@@ -37,13 +49,13 @@ async fn create(
     if !is_country_code_valid(&country) {
         let error = Error::new(ErrorKind::InvalidCountry, "invalid country code detected");
 
-        return create_handle_error(replier, error);
+        return replier.handle_error(error);
     }
 
     if !is_telephone_valid(&telephone) {
         let error = Error::new(ErrorKind::InvalidTelephone, "invalid telephone detected");
 
-        return create_handle_error(replier, error);
+        return replier.handle_error(error);
     }
 
     match can_user_create_organization(&user_id, storage_request_sender).await {
@@ -54,10 +66,10 @@ async fn create(
                     "user cannot create an organization",
                 );
 
-                return create_handle_error(replier, error);
+                return replier.handle_error(error);
             }
         }
-        Err(error) => return create_handle_error(replier, error),
+        Err(error) => return replier.handle_error(error),
     }
 
     match is_name_already_used(&name, storage_request_sender).await {
@@ -65,10 +77,10 @@ async fn create(
             if is_used {
                 let error = Error::new(ErrorKind::NameAlreadyTaken, "name is already being used");
 
-                return create_handle_error(replier, error);
+                return replier.handle_error(error);
             }
         }
-        Err(error) => return create_handle_error(replier, error),
+        Err(error) => return replier.handle_error(error),
     }
 
     match is_telephone_being_used(&telephone, storage_request_sender).await {
@@ -79,10 +91,10 @@ async fn create(
                     "telephone is already being used",
                 );
 
-                return create_handle_error(replier, error);
+                return replier.handle_error(error);
             }
         }
-        Err(error) => return create_handle_error(replier, error),
+        Err(error) => return replier.handle_error(error),
     }
 
     let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
@@ -106,14 +118,14 @@ async fn create(
                 format!("failed to send storage request: {}", error),
             );
 
-            return create_handle_error(replier, error);
+            return replier.handle_error(error);
         }
     }
 
     let organization = match storage_listener.await {
         Ok(result) => match result {
             Ok(organization) => organization,
-            Err(error) => return create_handle_error(replier, error),
+            Err(error) => return replier.handle_error(error),
         },
         Err(error) => {
             let error = Error::new(
@@ -124,11 +136,60 @@ async fn create(
                 ),
             );
 
-            return create_handle_error(replier, error);
+            return replier.handle_error(error);
         }
     };
 
-    // TODO: create user and add it to the organization
+    let user_organization = UserOrganization {
+        organization_id: organization.id.clone(),
+        permissions: logic::permission::organization_creator_permissions(),
+    };
+
+    let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
+
+    let create_user_request = StorageRequest::UserRequest(UserStorageAction::Create {
+        id: user_id,
+        organization: user_organization,
+        replier: storage_replier,
+    });
+
+    match storage_request_sender.send(create_user_request).await {
+        Ok(_) => (),
+        Err(error) => {
+            let error = Error::new(
+                ErrorKind::InternalFailure,
+                format!("failed to send storage request: {}", error),
+            );
+
+            restore_create_organization(organization.id, storage_request_sender).await;
+
+            return replier.handle_error(error);
+        }
+    }
+
+    let user = match storage_listener.await {
+        Ok(result) => match result {
+            Ok(user) => user,
+            Err(error) => {
+                restore_create_organization(organization.id, storage_request_sender).await;
+
+                return replier.handle_error(error);
+            }
+        },
+        Err(error) => {
+            let error = Error::new(
+                ErrorKind::InternalFailure,
+                format!(
+                    "failed to receive response for a storage request: {}",
+                    error
+                ),
+            );
+
+            restore_create_organization(organization.id, storage_request_sender).await;
+
+            return replier.handle_error(error);
+        }
+    };
 
     match replier.send(Ok(organization)) {
         Ok(_) => (),
@@ -145,28 +206,59 @@ async fn create(
     Ok(())
 }
 
-fn create_handle_error(
-    replier: tokio::sync::oneshot::Sender<Result<Organization, Error>>,
-    error: Error,
+async fn restore_create_organization(
+    organization_id: String,
+    storage_request_sender: &Sender<StorageRequest>,
 ) -> Result<(), Error> {
-    match replier.send(Err(error.clone())) {
-        Ok(_) => (),
-        Err(_) => log::error!("failed to reply to api"),
-    }
+    let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
 
-    Err(error)
+    match storage_request_sender
+        .send(StorageRequest::OrganizationRequest(
+            OrganizationStorageAction::Delete {
+                id: organization_id,
+                replier: storage_replier,
+            },
+        ))
+        .await
+    {
+        Ok(_) => (),
+        Err(error) => {
+            let error = Error::new(
+                ErrorKind::InternalFailure,
+                format!("failed to send storage request: {}", error),
+            );
+
+            log::error!("{}", error);
+            return Err(error);
+        }
+    };
+
+    match storage_listener.await {
+        Ok(result) => match result {
+            Ok(_) => Ok(()),
+            Err(error) => {
+                log::error!("failed to restore create organization: {}", error);
+                Err(error)
+            }
+        },
+        Err(error) => {
+            let error = Error::new(
+                ErrorKind::InternalFailure,
+                format!(
+                    "failed to receive response for a storage request: {}",
+                    error
+                ),
+            );
+
+            log::error!("{}", error);
+            Err(error)
+        }
+    }
 }
 
-use crate::error::{Error, ErrorKind};
-use crate::logic::actions::organization_logic_action::OrganizationLogicAction;
-use crate::logic::actions::organization_storage_action::OrganizationStorageAction;
-use crate::logic::elements::organization::Organization;
-use crate::logic::storage_request::StorageRequest;
-use crate::logic::validation::country::is_country_code_valid;
-use crate::logic::validation::name::is_name_already_used;
-use crate::logic::validation::telephone::{is_telephone_being_used, is_telephone_valid};
-use crate::logic::validation::user::can_user_create_organization;
-use async_channel::Sender;
+use crate::logic;
+use crate::logic::actions::user_storage_action::UserStorageAction;
+use crate::logic::elements::user_organization::UserOrganization;
 #[cfg(test)]
 use phonenumber::country::RO;
 

@@ -1,8 +1,7 @@
 use crate::logic::elements::user_organization::UserOrganization;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct User {
-    pub user_id: String,
+    pub id: String,
     pub organizations: Vec<UserOrganization>,
 }

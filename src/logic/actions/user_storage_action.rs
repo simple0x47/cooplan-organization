@@ -1,11 +1,13 @@
 use crate::error::Error;
 use crate::logic::elements::user::User;
+use crate::logic::elements::user_organization::UserOrganization;
 use tokio::sync::oneshot::Sender;
 
 #[derive(Debug)]
 pub enum UserStorageAction {
     Create {
-        user_id: String,
+        id: String,
+        organization: UserOrganization,
         replier: Sender<Result<User, Error>>,
     },
     FindUserById {

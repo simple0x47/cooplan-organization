@@ -1,8 +1,10 @@
 use crate::error::{Error, ErrorKind};
 use crate::logic::actions::organization_storage_action::OrganizationStorageAction;
+use crate::storage::elements::organization;
 use crate::storage::elements::organization::Organization;
 use crate::{logic, storage};
 use mongodb::bson::doc;
+use mongodb::bson::oid::ObjectId;
 use mongodb::Client;
 use tokio::sync::oneshot::Sender;
 
@@ -15,6 +17,7 @@ pub async fn execute(action: OrganizationStorageAction, client: &Client) -> Resu
             telephone,
             replier,
         } => create(name, country, address, telephone, replier, client).await?,
+        OrganizationStorageAction::Delete { id, replier } => delete(id, replier, client).await?,
         OrganizationStorageAction::FindByName { name, replier } => {
             find_by_key_and_value("name", &name, replier, client).await?
         }
@@ -82,7 +85,7 @@ async fn create(
                     Err(error) => {
                         let error = Error::new(
                             ErrorKind::InternalFailure,
-                            format!("failed to revert process: {}", error),
+                            format!("failed to revert create organization: {}", error),
                         );
 
                         create_handle_error(replier, error)
@@ -136,6 +139,71 @@ fn create_handle_error(
     Err(error)
 }
 
+async fn delete(
+    id: String,
+    replier: Sender<Result<(), Error>>,
+    client: &Client,
+) -> Result<(), Error> {
+    let organization_id = match ObjectId::parse_str(&id) {
+        Ok(organization_id) => organization_id,
+        Err(error) => {
+            return delete_handle_error(
+                replier,
+                Error::new(
+                    ErrorKind::InvalidArgument,
+                    format!("failed to parse organization id: {}", error),
+                ),
+            )
+        }
+    };
+
+    match client
+        .database(storage::elements::organization::DATABASE)
+        .collection::<Organization>(storage::elements::organization::COLLECTION)
+        .delete_one(
+            doc! {
+                "_id": organization_id,
+            },
+            None,
+        )
+        .await
+    {
+        Ok(_) => (),
+        Err(error) => {
+            return delete_handle_error(
+                replier,
+                Error::new(
+                    ErrorKind::InternalFailure,
+                    format!("failed to delete organization: {}", error),
+                ),
+            )
+        }
+    }
+
+    match replier.send(Ok(())) {
+        Ok(_) => (),
+        Err(_) => {
+            log::error!("failed to send response to logic");
+
+            return Err(Error::new(
+                ErrorKind::InternalFailure,
+                "failed to send response to logic",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn delete_handle_error(replier: Sender<Result<(), Error>>, error: Error) -> Result<(), Error> {
+    match replier.send(Err(error.clone())) {
+        Ok(_) => (),
+        Err(_) => log::error!("failed to reply to logic"),
+    }
+
+    Err(error)
+}
+
 async fn find_by_key_and_value(
     key: &str,
     value: &str,
@@ -144,11 +212,11 @@ async fn find_by_key_and_value(
 ) -> Result<(), Error> {
     let result: Option<logic::elements::organization::Organization> = match client
         .database(storage::elements::organization::DATABASE)
-        .collection(storage::elements::organization::COLLECTION)
+        .collection::<Organization>(storage::elements::organization::COLLECTION)
         .find_one(doc! { key: value }, None)
         .await
     {
-        Ok(result) => result,
+        Ok(result) => result.map(|organization| organization.into()),
         Err(error) => {
             return find_by_key_and_value_handle_error(
                 replier,
@@ -188,9 +256,7 @@ fn find_by_key_and_value_handle_error(
 }
 
 #[cfg(test)]
-#[tokio::test]
-#[ignore]
-async fn create_organization_successfully() {
+async fn setup() -> Client {
     let uri = match std::env::var("MONGODB_URI") {
         Ok(uri) => uri,
         Err(_) => {
@@ -199,6 +265,16 @@ async fn create_organization_successfully() {
     };
 
     let client = Client::with_uri_str(uri).await.unwrap();
+
+    organization::initialize(&client).await.unwrap();
+
+    client
+}
+
+#[tokio::test]
+#[ignore]
+async fn create_organization_successfully() {
+    let client = setup().await;
     let (replier, receiver) = tokio::sync::oneshot::channel();
 
     let result = create(
@@ -220,4 +296,33 @@ async fn create_organization_successfully() {
         .unwrap();
 
     assert!(result.is_ok());
+}
+
+#[tokio::test]
+#[ignore]
+async fn create_and_delete_organization_successfully() {
+    let client = setup().await;
+    let (replier, receiver) = tokio::sync::oneshot::channel();
+
+    let cloned_client = client.clone();
+    tokio::spawn(async move {
+        create(
+            "test".to_string(),
+            "test".to_string(),
+            "test".to_string(),
+            "+40753313640".to_string(),
+            replier,
+            &cloned_client,
+        )
+        .await
+        .unwrap();
+    });
+
+    let organization = receiver.await.unwrap().unwrap();
+    let (replier, receiver) = tokio::sync::oneshot::channel();
+
+    delete(organization.id, replier, &client).await;
+    let delete_result = receiver.await.unwrap();
+
+    assert!(delete_result.is_ok());
 }
