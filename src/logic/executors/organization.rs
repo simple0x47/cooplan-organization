@@ -7,7 +7,7 @@ use crate::logic::validation::country::is_country_code_valid;
 use crate::logic::validation::name::is_name_already_used;
 use crate::logic::validation::telephone::{is_telephone_being_used, is_telephone_valid};
 use crate::logic::validation::user::can_user_create_organization;
-use async_channel::Sender;
+use async_channel::{Receiver, Sender};
 use cooplan_util::error_handler::ErrorHandler;
 
 pub async fn execute(
@@ -289,4 +289,81 @@ fn phone_validation_works_on_phone_numbers_with_prefix() {
         }
         Err(e) => panic!("failed to parse valid phone number: {}", e),
     }
+}
+
+async fn setup() -> (
+    String,
+    String,
+    String,
+    String,
+    String,
+    (Sender<StorageRequest>, Receiver<StorageRequest>),
+) {
+    (
+        "USER_ID".to_string(),
+        "NAME".to_string(),
+        "RO".to_string(),
+        "ADDRESS".to_string(),
+        "+40753313640".to_string(),
+        async_channel::bounded(100),
+    )
+}
+
+#[tokio::test]
+async fn detect_invalid_country() {
+    const INVALID_COUNTRY: &str = "XX";
+
+    let (user_id, name, _, address, phone, (storage_request_sender, _)) = setup().await;
+
+    let (replier, listener) = tokio::sync::oneshot::channel();
+
+    let function_result = create(
+        user_id,
+        name,
+        INVALID_COUNTRY.to_string(),
+        address,
+        phone,
+        &storage_request_sender,
+        replier,
+    )
+    .await;
+
+    assert!(function_result.is_err());
+    assert_eq!(ErrorKind::InvalidCountry, function_result.unwrap_err().kind);
+
+    let result = listener.await.unwrap();
+
+    assert!(result.is_err());
+    assert_eq!(ErrorKind::InvalidCountry, result.unwrap_err().kind);
+}
+
+#[tokio::test]
+async fn detect_invalid_phone() {
+    const INVALID_PHONE: &str = "INVALID_PHONE";
+
+    let (user_id, name, country, address, _, (storage_request_sender, _)) = setup().await;
+
+    let (replier, listener) = tokio::sync::oneshot::channel();
+
+    let function_result = create(
+        user_id,
+        name,
+        country,
+        address,
+        INVALID_PHONE.to_string(),
+        &storage_request_sender,
+        replier,
+    )
+    .await;
+
+    assert!(function_result.is_err());
+    assert_eq!(
+        ErrorKind::InvalidTelephone,
+        function_result.unwrap_err().kind
+    );
+
+    let result = listener.await.unwrap();
+
+    assert!(result.is_err());
+    assert_eq!(ErrorKind::InvalidTelephone, result.unwrap_err().kind);
 }
