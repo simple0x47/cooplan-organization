@@ -44,6 +44,8 @@ jobs:
           - 27017:27017
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v3
     - name: Download Build's artifacts
       uses: actions/download-artifact@v3
       with:
