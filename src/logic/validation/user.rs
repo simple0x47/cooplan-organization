@@ -3,9 +3,7 @@ use crate::logic::actions::user_storage_action::UserStorageAction;
 use crate::logic::storage_request::StorageRequest;
 use async_channel::Sender;
 
-/// A user can only create an organization if it has no organizations yet.
-/// Once they are in one organization, they cannot create one.
-pub async fn can_user_create_organization(
+pub async fn has_user_no_organization(
     user_id: &str,
     storage_request_sender: &Sender<StorageRequest>,
 ) -> Result<bool, Error> {
