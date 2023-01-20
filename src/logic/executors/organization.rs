@@ -193,7 +193,7 @@ async fn create(
 
     match replier.send(Ok(organization)) {
         Ok(_) => (),
-        Err(error) => {
+        Err(_) => {
             log::error!("failed to send response to api");
 
             return Err(Error::new(
