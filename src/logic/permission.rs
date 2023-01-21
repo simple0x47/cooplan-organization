@@ -1,8 +1,6 @@
 use std::str::FromStr;
 
 pub enum Permission {
-    CreateOrganization,
-    JoinOrganization,
     ReadOrganization,
     UpdateOrganization,
     DeleteOrganization,
@@ -17,8 +15,6 @@ impl FromStr for Permission {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         match value {
-            "create:org" => Ok(Permission::CreateOrganization),
-            "join:org" => Ok(Permission::JoinOrganization),
             "read:org" => Ok(Permission::ReadOrganization),
             "update:org" => Ok(Permission::UpdateOrganization),
             "delete:org" => Ok(Permission::DeleteOrganization),
@@ -34,8 +30,6 @@ impl FromStr for Permission {
 impl ToString for Permission {
     fn to_string(&self) -> String {
         match self {
-            Permission::CreateOrganization => "create:org".to_string(),
-            Permission::JoinOrganization => "join:org".to_string(),
             Permission::ReadOrganization => "read:org".to_string(),
             Permission::UpdateOrganization => "update:org".to_string(),
             Permission::DeleteOrganization => "delete:org".to_string(),
