@@ -104,3 +104,6 @@ async def main():
         pass
     finally:
         restore_mongodb_initial_state()
+
+if __name__ == "__main__":
+    asyncio.run(main())
