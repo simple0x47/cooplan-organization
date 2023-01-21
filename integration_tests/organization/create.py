@@ -79,7 +79,8 @@ async def main():
     result_code = 0
     try:
         await create_organization_and_expect_it_as_response()
-    except:
+    except any as e:
+        print(f"Exception: {e}")
         result_code = 1
     finally:
         restore_mongodb_initial_state()
