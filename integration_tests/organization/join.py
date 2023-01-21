@@ -56,6 +56,9 @@ async def join_organization_and_expect_it_as_response():
 
     result = json.loads(serialized_result)
 
+    if not ("Ok" in result):
+        print(f"result: {result}")
+
     assert ("Ok" in result)
     organization = result["Ok"]
 
@@ -104,7 +107,7 @@ async def main():
     result_code = 0
     try:
         await join_organization_and_expect_it_as_response()
-    except any as e:
+    except BaseException as e:
         print(f"Exception: {e}")
         result_code = 1
     finally:
