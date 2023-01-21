@@ -1,5 +1,9 @@
+use crate::error::{Error, ErrorKind};
 use crate::logic;
+use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
+use mongodb::options::IndexOptions;
+use mongodb::{Client, IndexModel};
 use serde::Deserialize;
 
 pub const DATABASE: &str = "local";
@@ -26,4 +30,25 @@ impl Into<logic::elements::invitation::Invitation> for Invitation {
             expires_after: self.expires_after,
         }
     }
+}
+
+pub async fn initialize(client: &Client) -> Result<(), Error> {
+    let options = IndexOptions::builder().unique(true).build();
+
+    let index = IndexModel::builder()
+        .keys(doc! { "code": "text" })
+        .options(Some(options))
+        .build();
+
+    match client
+        .database(DATABASE)
+        .collection::<Invitation>(COLLECTION)
+        .create_index(index, None)
+        .await
+    {
+        Ok(_) => (),
+        Err(error) => return Err(Error::new(ErrorKind::InternalFailure, error.to_string())),
+    }
+
+    Ok(())
 }
