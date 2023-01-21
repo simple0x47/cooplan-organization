@@ -4,7 +4,6 @@ from amqp_api_client_py import amqp_input_api
 from cooplan_integration_test_boilerplate import test
 import amqp_config
 import os
-from pymongo import MongoClient
 
 from mongodb_config import ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION, USER_DATABASE, USER_COLLECTION
 
