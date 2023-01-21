@@ -3,8 +3,9 @@ use crate::logic::actions::organization_storage_action::OrganizationStorageActio
 use crate::storage::elements::organization;
 use crate::storage::elements::organization::Organization;
 use crate::{logic, storage};
-use mongodb::bson::doc;
+use cooplan_util::error_handler::ErrorHandler;
 use mongodb::bson::oid::ObjectId;
+use mongodb::bson::{doc, Bson};
 use mongodb::Client;
 use tokio::sync::oneshot::Sender;
 
@@ -18,6 +19,9 @@ pub async fn execute(action: OrganizationStorageAction, client: &Client) -> Resu
             replier,
         } => create(name, country, address, telephone, replier, client).await?,
         OrganizationStorageAction::Delete { id, replier } => delete(id, replier, client).await?,
+        OrganizationStorageAction::FindById { id, replier } => {
+            find_by_id(id, replier, client).await?
+        }
         OrganizationStorageAction::FindByName { name, replier } => {
             find_by_key_and_value("name", &name, replier, client).await?
         }
@@ -206,16 +210,34 @@ fn delete_handle_error(replier: Sender<Result<(), Error>>, error: Error) -> Resu
     Err(error)
 }
 
-async fn find_by_key_and_value(
+async fn find_by_id(
+    id: String,
+    replier: Sender<Result<Option<logic::elements::organization::Organization>, Error>>,
+    client: &Client,
+) -> Result<(), Error> {
+    let id = match ObjectId::parse_str(&id) {
+        Ok(id) => id,
+        Err(error) => {
+            return replier.handle_error(Error::new(
+                ErrorKind::InvalidArgument,
+                format!("failed to parse organization id: {}", error),
+            ))
+        }
+    };
+
+    find_by_key_and_value("_id", id, replier, client).await
+}
+
+async fn find_by_key_and_value<ValueType: Into<Bson>>(
     key: &str,
-    value: &str,
+    value: ValueType,
     replier: Sender<Result<Option<logic::elements::organization::Organization>, Error>>,
     client: &Client,
 ) -> Result<(), Error> {
     let result: Option<logic::elements::organization::Organization> = match client
         .database(storage::elements::organization::DATABASE)
         .collection::<Organization>(storage::elements::organization::COLLECTION)
-        .find_one(doc! { key: value }, None)
+        .find_one(doc! { key: value.into() }, None)
         .await
     {
         Ok(result) => result.map(|organization| organization.into()),

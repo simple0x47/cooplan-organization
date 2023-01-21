@@ -32,6 +32,9 @@ impl MongoDbRequestDispatch {
                         }
                         StorageRequest::UserRequest(action) => {
                             crate::storage::executors::user::execute(action, &self.client).await
+                        },
+                        StorageRequest::InvitationRequest(action) => {
+                            crate::storage::executors::invitation::execute(action, &self.client).await
                         }
                     };
 

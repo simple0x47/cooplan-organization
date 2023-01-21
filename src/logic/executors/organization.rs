@@ -1,12 +1,16 @@
 use crate::error::{Error, ErrorKind};
+use crate::logic;
 use crate::logic::actions::organization_logic_action::OrganizationLogicAction;
 use crate::logic::actions::organization_storage_action::OrganizationStorageAction;
+use crate::logic::actions::user_storage_action::UserStorageAction;
 use crate::logic::elements::organization::Organization;
+use crate::logic::elements::user_organization::UserOrganization;
 use crate::logic::storage_request::StorageRequest;
 use crate::logic::validation::country::is_country_code_valid;
+use crate::logic::validation::invitation::get_code_if_valid;
 use crate::logic::validation::name::is_name_already_used;
 use crate::logic::validation::telephone::{is_telephone_being_used, is_telephone_valid};
-use crate::logic::validation::user::can_user_create_organization;
+use crate::logic::validation::user::has_user_no_organization;
 use async_channel::{Receiver, Sender};
 use cooplan_util::error_handler::ErrorHandler;
 
@@ -34,6 +38,11 @@ pub async fn execute(
             )
             .await
         }
+        OrganizationLogicAction::Join {
+            user_id,
+            invitation_code,
+            replier,
+        } => join(user_id, invitation_code, storage_request_sender, replier).await,
     }
 }
 
@@ -58,7 +67,7 @@ async fn create(
         return replier.handle_error(error);
     }
 
-    match can_user_create_organization(&user_id, storage_request_sender).await {
+    match has_user_no_organization(&user_id, storage_request_sender).await {
         Ok(can_create) => {
             if !can_create {
                 let error = Error::new(
@@ -256,9 +265,57 @@ async fn restore_create_organization(
     }
 }
 
-use crate::logic;
-use crate::logic::actions::user_storage_action::UserStorageAction;
-use crate::logic::elements::user_organization::UserOrganization;
+async fn join(
+    user_id: String,
+    invitation_code: String,
+    storage_request_sender: &Sender<StorageRequest>,
+    replier: tokio::sync::oneshot::Sender<Result<Organization, Error>>,
+) -> Result<(), Error> {
+    match has_user_no_organization(&user_id, storage_request_sender).await {
+        Ok(can_join) => {
+            if !can_join {
+                let error = Error::new(
+                    ErrorKind::UserCannotJoinAnyOrganization,
+                    "user cannot join any organization",
+                );
+
+                return replier.handle_error(error);
+            }
+        }
+        Err(error) => return replier.handle_error(error),
+    }
+
+    let invitation = match get_code_if_valid(invitation_code, storage_request_sender).await {
+        Ok(invitation) => invitation,
+        Err(error) => return replier.handle_error(error),
+    };
+
+    let organization = match get_organization_if_exists(
+        invitation.organization_id,
+        storage_request_sender,
+    )
+    .await
+    {
+        Ok(organization) => organization,
+        Err(error) => return replier.handle_error(error),
+    };
+
+    match replier.send(Ok(organization)) {
+        Ok(_) => (),
+        Err(_) => {
+            log::error!("failed to send response to api");
+
+            return Err(Error::new(
+                ErrorKind::InternalFailure,
+                "failed to send response to api",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+use crate::logic::validation::organization::get_organization_if_exists;
 #[cfg(test)]
 use phonenumber::country::RO;
 

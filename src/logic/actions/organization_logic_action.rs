@@ -11,4 +11,9 @@ pub enum OrganizationLogicAction {
         telephone: String,
         replier: Sender<Result<Organization, Error>>,
     },
+    Join {
+        user_id: String,
+        invitation_code: String,
+        replier: Sender<Result<Organization, Error>>,
+    },
 }

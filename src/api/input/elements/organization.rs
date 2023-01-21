@@ -14,7 +14,14 @@ use cooplan_lapin_wrapper::config::api::Api;
 use serde_json::{Map, Value};
 use std::sync::Arc;
 
-const ACTIONS: &[&str] = &["create", "read", "update", "delete", "request_permission"];
+const ACTIONS: &[&str] = &[
+    "create",
+    "join",
+    "read",
+    "update",
+    "delete",
+    "request_permission",
+];
 
 pub fn get(api: &Api) -> Result<InputElement<LogicRequest>, Error> {
     const ELEMENT_ID: &str = "organization";
@@ -63,6 +70,7 @@ async fn request_handler(
 
     match action.as_str() {
         "create" => create(authorized_token, data, logic_request_sender).await,
+        "join" => join(authorized_token, data, logic_request_sender).await,
         _ => {
             return RequestResult::Err(RequestResultError::new(
                 RequestResultErrorKind::MalformedRequest,
@@ -72,27 +80,19 @@ async fn request_handler(
     }
 }
 
+/// Expected parameters:
+/// - **name**: String
+/// - **country**: String
+/// - **address**: String
+/// - **telephone**: String
 async fn create(
     authorized_token: Token,
     data: Map<String, Value>,
     logic_request_sender: Sender<LogicRequest>,
 ) -> RequestResult {
-    let user_id = match authorized_token.get("sub") {
-        Some(user_id) => match user_id.as_str() {
-            Some(user_id) => user_id.to_string(),
-            None => {
-                return RequestResult::Err(RequestResultError::new(
-                    RequestResultErrorKind::MalformedRequest,
-                    "failed to read user id from token",
-                ))
-            }
-        },
-        None => {
-            return RequestResult::Err(RequestResultError::new(
-                RequestResultErrorKind::MalformedRequest,
-                "failed to read user id from token",
-            ))
-        }
+    let user_id = match extract_user_id_from_token(&authorized_token) {
+        Ok(user_id) => user_id,
+        Err(request_result) => return request_result,
     };
 
     let (name, country, address, telephone) = match extract_create_expected_parameters(data) {
@@ -150,6 +150,28 @@ async fn create(
     result
 }
 
+fn extract_user_id_from_token(authorized_token: &Token) -> Result<String, RequestResult> {
+    let user_id = match authorized_token.get("sub") {
+        Some(user_id) => match user_id.as_str() {
+            Some(user_id) => user_id.to_string(),
+            None => {
+                return Err(RequestResult::Err(RequestResultError::new(
+                    RequestResultErrorKind::MalformedRequest,
+                    "failed to read user id from token",
+                )))
+            }
+        },
+        None => {
+            return Err(RequestResult::Err(RequestResultError::new(
+                RequestResultErrorKind::MalformedRequest,
+                "failed to read user id from token",
+            )))
+        }
+    };
+
+    Ok(user_id)
+}
+
 fn extract_create_expected_parameters(
     data: Map<String, Value>,
 ) -> Result<(String, String, String, String), RequestResult> {
@@ -182,6 +204,75 @@ fn extract_create_expected_parameters(
         };
 
     Ok((name, country, address, telephone))
+}
+
+/// Expected parameters:
+/// - **invitation_code**: String
+async fn join(
+    authorized_token: Token,
+    data: Map<String, Value>,
+    logic_request_sender: Sender<LogicRequest>,
+) -> RequestResult {
+    let user_id = match extract_user_id_from_token(&authorized_token) {
+        Ok(user_id) => user_id,
+        Err(request_result) => return request_result,
+    };
+
+    const ORGANIZATION_INVITATION_CODE_KEY: &str = "invitation_code";
+
+    let invitation_code = match extract_parameter_from_request_data::<String>(
+        &data,
+        ORGANIZATION_INVITATION_CODE_KEY,
+    ) {
+        Ok(invitation_code) => invitation_code,
+        Err(error) => return error,
+    };
+
+    let (replier, receiver) = tokio::sync::oneshot::channel();
+
+    let action = OrganizationLogicAction::Join {
+        user_id,
+        invitation_code,
+        replier,
+    };
+
+    match logic_request_sender
+        .send(LogicRequest::OrganizationRequest(action))
+        .await
+    {
+        Ok(_) => (),
+        Err(error) => {
+            return RequestResult::Err(RequestResultError::new(
+                RequestResultErrorKind::InternalFailure,
+                format!(
+                    "failed to send organization join request to logic: {}",
+                    error
+                ),
+            ))
+        }
+    }
+
+    let result = match receiver.await {
+        Ok(result) => match result {
+            Ok(organization) => match serde_json::to_value(organization) {
+                Ok(value) => RequestResult::Ok(value),
+                Err(error) => RequestResult::Err(RequestResultError::new(
+                    RequestResultErrorKind::InternalFailure,
+                    format!("failed to serialize organization: {}", error),
+                )),
+            },
+            Err(error) => RequestResult::Err(RequestResultError::new(
+                RequestResultErrorKind::MalformedRequest,
+                format!("failed to join organization: {}", error),
+            )),
+        },
+        Err(error) => RequestResult::Err(RequestResultError::new(
+            RequestResultErrorKind::InternalFailure,
+            format!("failed to receive result from logic: {}", error),
+        )),
+    };
+
+    result
 }
 
 #[cfg(test)]
