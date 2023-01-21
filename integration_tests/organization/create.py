@@ -64,7 +64,7 @@ async def create_organization_and_expect_it_as_response():
     assert (len(user["id"]) > 0)
     assert (len(user["organizations"]) == 1)
     assert (len(user["organizations"][0]["permissions"]) > 0)
-    assert (user["organizations"]["0"]["organization_id"] == organization["id"])
+    assert (user["organizations"][0]["organization_id"] == organization["id"])
 
 def restore_mongodb_initial_state():
     if test.restore_initial_state(ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION):
