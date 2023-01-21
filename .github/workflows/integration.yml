@@ -80,3 +80,4 @@ jobs:
           TOKEN_REQUEST: ${{ secrets.TOKEN_REQUEST }}
           AMQP_API_CONNECTION_URI: 'amqp://guest:guest@localhost:5672'
           TEST_TIMEOUT_AFTER_SECONDS: 15
+          TEST_MONGODB_URI: 'mongodb://localhost:27017'
