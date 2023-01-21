@@ -76,12 +76,15 @@ def restore_mongodb_initial_state():
 
 
 async def main():
+    result_code = 0
     try:
         await create_organization_and_expect_it_as_response()
     except:
-        pass
+        result_code = 1
     finally:
         restore_mongodb_initial_state()
+
+    exit(result_code)
 
 
 if __name__ == "__main__":

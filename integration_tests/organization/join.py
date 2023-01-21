@@ -11,6 +11,7 @@ from mongodb_config import ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION, USER_
 
 TEST_TIMEOUT_AFTER_SECONDS_ENV = "TEST_TIMEOUT_AFTER_SECONDS"
 
+
 async def join_organization_and_expect_it_as_response():
     client = MongoClient(os.environ.get(test.TEST_MONGODB_URI_ENV))
 
@@ -81,6 +82,7 @@ async def join_organization_and_expect_it_as_response():
 
     assert (invitation_code is None)
 
+
 def restore_mongodb_initial_state():
     if test.restore_initial_state(ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION):
         print(f"successfully restored initial state for the '{ORGANIZATION_COLLECTION}' collection")
@@ -97,13 +99,18 @@ def restore_mongodb_initial_state():
     else:
         print(f"failed to restore initial state for the '{INVITATION_COLLECTION}' collection")
 
+
 async def main():
+    result_code = 0
     try:
         await join_organization_and_expect_it_as_response()
     except:
-        pass
+        result_code = 1
     finally:
         restore_mongodb_initial_state()
+
+    exit(result_code)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
