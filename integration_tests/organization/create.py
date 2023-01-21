@@ -4,6 +4,9 @@ from amqp_api_client_py import amqp_input_api
 from cooplan_integration_test_boilerplate import test
 import amqp_config
 import os
+from pymongo import MongoClient
+
+from mongodb_config import ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION, USER_DATABASE, USER_COLLECTION
 
 TEST_TIMEOUT_AFTER_SECONDS_ENV = "TEST_TIMEOUT_AFTER_SECONDS"
 
@@ -46,9 +49,25 @@ async def create_organization_and_expect_it_as_response():
     assert (REQUEST["address"] == organization["address"])
     assert (REQUEST["telephone"] == organization["telephone"])
 
+def restore_mongodb_initial_state():
+    if test.restore_initial_state(ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION):
+        print(f"successfully restored initial state for the '{ORGANIZATION_COLLECTION}' collection")
+    else:
+        print(f"failed to restore initial state for the '{ORGANIZATION_COLLECTION}' collection")
+
+    if test.restore_initial_state(USER_DATABASE, USER_COLLECTION):
+        print(f"successfully restored initial state for the '{USER_COLLECTION}' collection")
+    else:
+        print(f"failed to restore initial state for the '{USER_COLLECTION}' collection")
+
 
 async def main():
-    await create_organization_and_expect_it_as_response()
+    try:
+        await create_organization_and_expect_it_as_response()
+    except:
+        pass
+    finally:
+        restore_mongodb_initial_state()
 
 
 if __name__ == "__main__":
