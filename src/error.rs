@@ -13,6 +13,10 @@ pub enum ErrorKind {
     NameAlreadyTaken,
     TelephoneAlreadyInUse,
     UserCannotCreateOrganization,
+    UserCannotJoinAnyOrganization,
+    InvitationNotFound,
+    InvitationHasExpired,
+    OrganizationNotFound,
     ProcessReversion,
 }
 

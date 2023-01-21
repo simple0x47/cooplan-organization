@@ -32,7 +32,7 @@ pub async fn initialize(client: &Client) -> Result<(), Error> {
 
     let index = IndexModel::builder()
         .keys(doc! { "id": 1u32 })
-        .options(Some(options.clone()))
+        .options(Some(options))
         .build();
 
     match client

@@ -176,7 +176,7 @@ async fn delete(
 }
 
 #[cfg(test)]
-use crate::logic::permission::organization_creator_permissions;
+use crate::logic::organization_permission::organization_creator_permissions;
 use crate::storage::elements::user;
 
 async fn setup() -> Client {

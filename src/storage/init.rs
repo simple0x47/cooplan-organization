@@ -45,6 +45,7 @@ pub async fn initialize(
 async fn initialize_elements(client: &Client) -> Result<(), Error> {
     storage::elements::organization::initialize(client).await?;
     storage::elements::user::initialize(client).await?;
+    storage::elements::invitation::initialize(client).await?;
 
     Ok(())
 }

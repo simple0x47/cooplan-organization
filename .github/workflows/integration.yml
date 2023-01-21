@@ -74,9 +74,10 @@ jobs:
         TOKEN_RESPONSE=$(curl --request POST --url $TOKEN_REQUEST_URI --header 'content-type: application/json' --data $TOKEN_REQUEST)
         TOKEN=$(echo $TOKEN_RESPONSE | jq --raw-output '.access_token')
         mv ./script_runner/script_runner.py ./script_runner.py
-        python3 script_runner.py ./integration_tests/ $TOKEN
+        python3 script_runner.py ./integration_tests/ $TOKEN false
       env:
           TOKEN_REQUEST_URI: ${{ secrets.TOKEN_REQUEST_URI }}
           TOKEN_REQUEST: ${{ secrets.TOKEN_REQUEST }}
           AMQP_API_CONNECTION_URI: 'amqp://guest:guest@localhost:5672'
           TEST_TIMEOUT_AFTER_SECONDS: 15
+          TEST_MONGODB_URI: 'mongodb://localhost:27017'

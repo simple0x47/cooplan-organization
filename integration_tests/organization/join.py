@@ -2,26 +2,46 @@ import asyncio
 import json
 from amqp_api_client_py import amqp_input_api
 from cooplan_integration_test_boilerplate import test
-from pymongo import MongoClient
-
 import amqp_config
 import os
-
-from mongodb_config import ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION, USER_DATABASE, USER_COLLECTION
+from pymongo import MongoClient
+import time
+from mongodb_config import ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION, USER_DATABASE, USER_COLLECTION, \
+    INVITATION_DATABASE, INVITATION_COLLECTION
 
 TEST_TIMEOUT_AFTER_SECONDS_ENV = "TEST_TIMEOUT_AFTER_SECONDS"
 
 
-async def create_organization_and_expect_it_as_response():
-    REQUEST = {
-        "header": {
-            "element": "organization",
-            "action": "create"
-        },
+async def join_organization_and_expect_it_as_response():
+    client = MongoClient(os.environ.get(test.TEST_MONGODB_URI_ENV))
+
+    EXAMPLE_ORGANIZATION = {
         "name": "Organization Test #1234",
         "country": "RO",
         "address": "Strada Exemplu Nr.15",
-        "telephone": "+40753313640"
+        "telephone": "+40712113640",
+        "permissions": []
+    }
+
+    result = client[ORGANIZATION_DATABASE][
+        ORGANIZATION_COLLECTION].insert_one(EXAMPLE_ORGANIZATION)
+
+    EXAMPLE_REQUEST_CODE = "1234567890"
+
+    client[INVITATION_DATABASE][INVITATION_COLLECTION].insert_one({
+        "code": EXAMPLE_REQUEST_CODE,
+        "organization_id": result.inserted_id,
+        "permissions": [],
+        "created_at": int(time.time()),
+        "expires_after": int(time.time()) + 3600,
+    })
+
+    REQUEST = {
+        "header": {
+            "element": "organization",
+            "action": "join"
+        },
+        "invitation_code": EXAMPLE_REQUEST_CODE
     }
 
     test.init_request(REQUEST)
@@ -47,23 +67,23 @@ async def create_organization_and_expect_it_as_response():
     assert ("address" in organization)
     assert ("telephone" in organization)
     assert (len(organization["id"]) > 0)
-    assert (REQUEST["name"] == organization["name"])
-    assert (REQUEST["country"] == organization["country"])
-    assert (REQUEST["address"] == organization["address"])
-    assert (REQUEST["telephone"] == organization["telephone"])
+    assert (EXAMPLE_ORGANIZATION["name"] == organization["name"])
+    assert (EXAMPLE_ORGANIZATION["country"] == organization["country"])
+    assert (EXAMPLE_ORGANIZATION["address"] == organization["address"])
+    assert (EXAMPLE_ORGANIZATION["telephone"] == organization["telephone"])
 
     # Assert that user has been added to the organization.
-    client = MongoClient(os.environ.get(test.TEST_MONGODB_URI_ENV))
     user = client[USER_DATABASE][USER_COLLECTION].find_one({"organizations.organization_id": organization["id"]})
 
     assert (user is not None)
     assert ("id" in user)
-    assert ("organizations" in user)
-    assert ("permissions" in user["organizations"][0])
     assert (len(user["id"]) > 0)
-    assert (len(user["organizations"]) == 1)
-    assert (len(user["organizations"][0]["permissions"]) > 0)
-    assert (user["organizations"][0]["organization_id"] == organization["id"])
+
+    # Assert that invitation code has been removed.
+    invitation_code = client[INVITATION_DATABASE][INVITATION_COLLECTION].find_one({"code": EXAMPLE_REQUEST_CODE})
+
+    assert (invitation_code is None)
+
 
 def restore_mongodb_initial_state():
     if test.restore_initial_state(ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION):
@@ -76,11 +96,16 @@ def restore_mongodb_initial_state():
     else:
         print(f"failed to restore initial state for the '{USER_COLLECTION}' collection")
 
+    if test.restore_initial_state(INVITATION_DATABASE, INVITATION_COLLECTION):
+        print(f"successfully restored initial state for the '{INVITATION_COLLECTION}' collection")
+    else:
+        print(f"failed to restore initial state for the '{INVITATION_COLLECTION}' collection")
+
 
 async def main():
     result_code = 0
     try:
-        await create_organization_and_expect_it_as_response()
+        await join_organization_and_expect_it_as_response()
     except BaseException as e:
         print(f"Exception: {e}")
         result_code = 1

@@ -15,6 +15,10 @@ pub enum OrganizationStorageAction {
         id: String,
         replier: Sender<Result<(), Error>>,
     },
+    FindById {
+        id: String,
+        replier: Sender<Result<Option<Organization>, Error>>,
+    },
     FindByName {
         name: String,
         replier: Sender<Result<Option<Organization>, Error>>,

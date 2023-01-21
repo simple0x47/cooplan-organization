@@ -9,6 +9,9 @@ Microservice in charge of storing & managing organizations and their users.
   * `create #AUTH (*name, country, address, *telephone) -> Result<Organization, Error>` 
     * User must have no other organizations in order to be able to use this functionality.
   <br></br>
+  * `join #AUTH (invitation_code) -> Result<Organization, Error>`
+    * User must have no other organizations in order to be able to use this functionality.
+      <br></br>
   * `read #AUTH (organization_id) -> Result<Organization, Error>`
   <br></br>
   * `update #AUTH (*name, country, address, *telephone) -> Result<(), Error>`

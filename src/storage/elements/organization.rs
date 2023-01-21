@@ -6,6 +6,8 @@ use mongodb::options::IndexOptions;
 use mongodb::{Client, IndexModel};
 use serde::Deserialize;
 
+// Values are used within the integration tests.
+// Therefore, any update must be reflected in the tests.
 pub const DATABASE: &str = "local";
 pub const COLLECTION: &str = "organization";
 

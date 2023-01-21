@@ -1,18 +1,19 @@
 use crate::error::{Error, ErrorKind};
-use crate::logic::actions::user_storage_action::UserStorageAction;
+use crate::logic::actions::invitation_code_storage_action::InvitationStorageAction;
+use crate::logic::elements::invitation::Invitation;
 use crate::logic::storage_request::StorageRequest;
 use async_channel::Sender;
 
-pub async fn has_user_no_organization(
-    user_id: &str,
+pub async fn get_code_if_valid(
+    invitation_code: String,
     storage_request_sender: &Sender<StorageRequest>,
-) -> Result<bool, Error> {
+) -> Result<Invitation, Error> {
     let (replier, receiver) = tokio::sync::oneshot::channel();
 
     match storage_request_sender
-        .send(StorageRequest::UserRequest(
-            UserStorageAction::FindUserById {
-                user_id: user_id.to_string(),
+        .send(StorageRequest::InvitationRequest(
+            InvitationStorageAction::FindByCode {
+                code: invitation_code,
                 replier,
             },
         ))
@@ -27,9 +28,17 @@ pub async fn has_user_no_organization(
         }
     }
 
-    let user = match receiver.await {
+    let invitation = match receiver.await {
         Ok(result) => match result {
-            Ok(optional_user) => optional_user,
+            Ok(optional_invitation) => match optional_invitation {
+                Some(invitation) => invitation,
+                None => {
+                    let error =
+                        Error::new(ErrorKind::InvitationNotFound, "invitation code not found");
+
+                    return Err(error);
+                }
+            },
             Err(error) => return Err(error),
         },
         Err(error) => {
@@ -43,11 +52,12 @@ pub async fn has_user_no_organization(
         }
     };
 
-    // User can only create an organization if it has no organizations.
-    let result = match user {
-        Some(user) => user.organizations.is_empty(),
-        None => true,
-    };
+    if invitation.expired() {
+        return Err(Error::new(
+            ErrorKind::InvitationHasExpired,
+            "invitation code has expired",
+        ));
+    }
 
-    Ok(result)
+    Ok(invitation)
 }

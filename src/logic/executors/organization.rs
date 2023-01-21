@@ -1,12 +1,16 @@
 use crate::error::{Error, ErrorKind};
+use crate::logic;
 use crate::logic::actions::organization_logic_action::OrganizationLogicAction;
 use crate::logic::actions::organization_storage_action::OrganizationStorageAction;
+use crate::logic::actions::user_storage_action::UserStorageAction;
 use crate::logic::elements::organization::Organization;
+use crate::logic::elements::user_organization::UserOrganization;
 use crate::logic::storage_request::StorageRequest;
 use crate::logic::validation::country::is_country_code_valid;
+use crate::logic::validation::invitation::get_code_if_valid;
 use crate::logic::validation::name::is_name_already_used;
 use crate::logic::validation::telephone::{is_telephone_being_used, is_telephone_valid};
-use crate::logic::validation::user::can_user_create_organization;
+use crate::logic::validation::user::has_user_no_organization;
 use async_channel::{Receiver, Sender};
 use cooplan_util::error_handler::ErrorHandler;
 
@@ -34,6 +38,11 @@ pub async fn execute(
             )
             .await
         }
+        OrganizationLogicAction::Join {
+            user_id,
+            invitation_code,
+            replier,
+        } => join(user_id, invitation_code, storage_request_sender, replier).await,
     }
 }
 
@@ -58,7 +67,7 @@ async fn create(
         return replier.handle_error(error);
     }
 
-    match can_user_create_organization(&user_id, storage_request_sender).await {
+    match has_user_no_organization(&user_id, storage_request_sender).await {
         Ok(can_create) => {
             if !can_create {
                 let error = Error::new(
@@ -142,7 +151,7 @@ async fn create(
 
     let user_organization = UserOrganization {
         organization_id: organization.id.clone(),
-        permissions: logic::permission::organization_creator_permissions(),
+        permissions: logic::organization_permission::organization_creator_permissions(),
     };
 
     let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
@@ -193,7 +202,7 @@ async fn create(
 
     match replier.send(Ok(organization)) {
         Ok(_) => (),
-        Err(error) => {
+        Err(_) => {
             log::error!("failed to send response to api");
 
             return Err(Error::new(
@@ -256,9 +265,183 @@ async fn restore_create_organization(
     }
 }
 
-use crate::logic;
-use crate::logic::actions::user_storage_action::UserStorageAction;
-use crate::logic::elements::user_organization::UserOrganization;
+async fn join(
+    user_id: String,
+    invitation_code: String,
+    storage_request_sender: &Sender<StorageRequest>,
+    mut replier: tokio::sync::oneshot::Sender<Result<Organization, Error>>,
+) -> Result<(), Error> {
+    match has_user_no_organization(&user_id, storage_request_sender).await {
+        Ok(can_join) => {
+            if !can_join {
+                let error = Error::new(
+                    ErrorKind::UserCannotJoinAnyOrganization,
+                    "user cannot join any organization",
+                );
+
+                return replier.handle_error(error);
+            }
+        }
+        Err(error) => return replier.handle_error(error),
+    }
+
+    let invitation = match get_code_if_valid(invitation_code, storage_request_sender).await {
+        Ok(invitation) => invitation,
+        Err(error) => return replier.handle_error(error),
+    };
+
+    let organization = match get_organization_if_exists(
+        invitation.organization_id,
+        storage_request_sender,
+    )
+    .await
+    {
+        Ok(organization) => organization,
+        Err(error) => return replier.handle_error(error),
+    };
+
+    replier = create_user(
+        user_id,
+        organization.id.clone(),
+        invitation.permissions,
+        replier,
+        storage_request_sender,
+    )
+    .await?;
+
+    // An error occurring during the deletion of the invitation is not critical,
+    // since the invitation code will eventually expire.
+    delete_invitation(invitation.code, storage_request_sender).await;
+
+    match replier.send(Ok(organization)) {
+        Ok(_) => (),
+        Err(_) => {
+            log::error!("failed to send response to api");
+
+            return Err(Error::new(
+                ErrorKind::InternalFailure,
+                "failed to send response to api",
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+async fn create_user(
+    user_id: String,
+    organization_id: String,
+    permissions: Vec<String>,
+    replier: tokio::sync::oneshot::Sender<Result<Organization, Error>>,
+    storage_request_sender: &Sender<StorageRequest>,
+) -> Result<tokio::sync::oneshot::Sender<Result<Organization, Error>>, Error> {
+    let user_organization = UserOrganization {
+        organization_id,
+        permissions,
+    };
+
+    let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
+    let create_user_request = StorageRequest::UserRequest(UserStorageAction::Create {
+        id: user_id,
+        organization: user_organization,
+        replier: storage_replier,
+    });
+
+    match storage_request_sender.send(create_user_request).await {
+        Ok(_) => (),
+        Err(error) => {
+            let error = Error::new(
+                ErrorKind::InternalFailure,
+                format!("failed to send storage request: {}", error),
+            );
+
+            return replier.handle_error(error);
+        }
+    }
+
+    let user = match storage_listener.await {
+        Ok(result) => match result {
+            Ok(user) => user,
+            Err(error) => return replier.handle_error(error),
+        },
+        Err(error) => {
+            let error = Error::new(
+                ErrorKind::InternalFailure,
+                format!(
+                    "failed to receive response for a storage request: {}",
+                    error
+                ),
+            );
+
+            return replier.handle_error(error);
+        }
+    };
+
+    Ok(replier)
+}
+
+async fn delete_invitation(
+    invitation_code: String,
+    storage_request_sender: &Sender<StorageRequest>,
+) -> Result<(), Error> {
+    let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
+    let delete_invitation_request =
+        StorageRequest::InvitationRequest(InvitationStorageAction::Delete {
+            code: invitation_code,
+            replier: storage_replier,
+        });
+
+    match storage_request_sender.send(delete_invitation_request).await {
+        Ok(_) => (),
+        Err(error) => {
+            let error = Error::new(
+                ErrorKind::InternalFailure,
+                format!(
+                    "failed to send storage request for deleting the invitation: {}",
+                    error
+                ),
+            );
+
+            log::error!("{}", error);
+
+            return Err(error);
+        }
+    }
+
+    match storage_listener.await {
+        Ok(result) => match result {
+            Ok(_) => (),
+            Err(error) => {
+                let error = Error::new(
+                    ErrorKind::StorageFailure,
+                    format!("failed to delete invitation: {}", error),
+                );
+
+                log::error!("{}", error);
+
+                return Err(error);
+            }
+        },
+        Err(error) => {
+            let error = Error::new(
+                ErrorKind::InternalFailure,
+                format!(
+                    "failed to receive response for deleting the invitation: {}",
+                    error
+                ),
+            );
+
+            log::error!("{}", error);
+
+            return Err(error);
+        }
+    }
+
+    Ok(())
+}
+
+use crate::logic::actions::invitation_code_storage_action::InvitationStorageAction;
+use crate::logic::validation::organization::get_organization_if_exists;
 #[cfg(test)]
 use phonenumber::country::RO;
 
