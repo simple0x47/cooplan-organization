@@ -4,7 +4,7 @@ use std::time::{Duration, SystemTime};
 
 #[derive(Debug)]
 pub struct Invitation {
-    pub invitation_code: String,
+    pub code: String,
     pub organization_id: String,
     pub permissions: Vec<String>,
     /// Unix timestamp, seconds after the UNIX EPOCH
@@ -31,7 +31,7 @@ fn expires_correctly() {
         .unwrap();
 
     let invitation = Invitation {
-        invitation_code: "test".to_string(),
+        code: "test".to_string(),
         organization_id: "test".to_string(),
         permissions: vec![],
         created_at: created_at.as_secs(),

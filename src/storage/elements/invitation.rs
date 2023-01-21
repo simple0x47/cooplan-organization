@@ -19,7 +19,7 @@ pub struct Invitation {
 impl Into<logic::elements::invitation::Invitation> for Invitation {
     fn into(self) -> logic::elements::invitation::Invitation {
         logic::elements::invitation::Invitation {
-            invitation_code: self.code,
+            code: self.code,
             organization_id: self.organization_id,
             permissions: self.permissions,
             created_at: self.created_at,
