@@ -23,8 +23,8 @@ async def join_organization_and_expect_it_as_response():
         "permissions": []
     }
 
-    result = client[ORGANIZATION_COLLECTION][
-        ORGANIZATION_DATABASE].insert_one(EXAMPLE_ORGANIZATION)
+    result = client[ORGANIZATION_DATABASE][
+        ORGANIZATION_COLLECTION].insert_one(EXAMPLE_ORGANIZATION)
 
     EXAMPLE_REQUEST_CODE = "1234567890"
 
@@ -33,7 +33,7 @@ async def join_organization_and_expect_it_as_response():
         "organization_id": result.inserted_id,
         "permissions": [],
         "created_at": int(time.time()),
-        "expires_at": int(time.time()) + 3600,
+        "expires_after": int(time.time()) + 3600,
     })
 
     REQUEST = {
@@ -56,8 +56,7 @@ async def join_organization_and_expect_it_as_response():
 
     result = json.loads(serialized_result)
 
-    if not ("Ok" in result):
-        print(f"result: {result}")
+    print(f"result: {result}")
 
     assert ("Ok" in result)
     organization = result["Ok"]
@@ -68,10 +67,10 @@ async def join_organization_and_expect_it_as_response():
     assert ("address" in organization)
     assert ("telephone" in organization)
     assert (len(organization["id"]) > 0)
-    assert (REQUEST["name"] == EXAMPLE_ORGANIZATION["name"])
-    assert (REQUEST["country"] == EXAMPLE_ORGANIZATION["country"])
-    assert (REQUEST["address"] == EXAMPLE_ORGANIZATION["address"])
-    assert (REQUEST["telephone"] == EXAMPLE_ORGANIZATION["telephone"])
+    assert (EXAMPLE_ORGANIZATION["name"] == organization["name"])
+    assert (EXAMPLE_ORGANIZATION["country"] == organization["country"])
+    assert (EXAMPLE_ORGANIZATION["address"] == organization["address"])
+    assert (EXAMPLE_ORGANIZATION["telephone"] == organization["telephone"])
 
     # Assert that user has been added to the organization.
     user = client[USER_DATABASE][USER_COLLECTION].find_one({"organizations.organization_id": organization["id"]})
