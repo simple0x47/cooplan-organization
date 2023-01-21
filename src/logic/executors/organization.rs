@@ -151,7 +151,7 @@ async fn create(
 
     let user_organization = UserOrganization {
         organization_id: organization.id.clone(),
-        permissions: logic::permission::organization_creator_permissions(),
+        permissions: logic::organization_permission::organization_creator_permissions(),
     };
 
     let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
