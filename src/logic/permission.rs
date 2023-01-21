@@ -17,12 +17,12 @@ impl FromStr for Permission {
 
     fn from_str(value: &str) -> Result<Self, Self::Err> {
         match value {
-            "create:organization" => Ok(Permission::CreateOrganization),
-            "join:organization" => Ok(Permission::JoinOrganization),
-            "read:organization" => Ok(Permission::ReadOrganization),
-            "update:organization" => Ok(Permission::UpdateOrganization),
-            "delete:organization" => Ok(Permission::DeleteOrganization),
-            "request_permission:organization" => Ok(Permission::RequestPermissionForOrganization),
+            "create:org" => Ok(Permission::CreateOrganization),
+            "join:org" => Ok(Permission::JoinOrganization),
+            "read:org" => Ok(Permission::ReadOrganization),
+            "update:org" => Ok(Permission::UpdateOrganization),
+            "delete:org" => Ok(Permission::DeleteOrganization),
+            "request_permission:org" => Ok(Permission::RequestPermissionForOrganization),
             "invite:user" => Ok(Permission::InviteUser),
             "update:user" => Ok(Permission::UpdateUser),
             "delete:user" => Ok(Permission::DeleteUser),
@@ -34,14 +34,12 @@ impl FromStr for Permission {
 impl ToString for Permission {
     fn to_string(&self) -> String {
         match self {
-            Permission::CreateOrganization => "create:organization".to_string(),
-            Permission::JoinOrganization => "join:organization".to_string(),
-            Permission::ReadOrganization => "read:organization".to_string(),
-            Permission::UpdateOrganization => "update:organization".to_string(),
-            Permission::DeleteOrganization => "delete:organization".to_string(),
-            Permission::RequestPermissionForOrganization => {
-                "request_permission:organization".to_string()
-            }
+            Permission::CreateOrganization => "create:org".to_string(),
+            Permission::JoinOrganization => "join:org".to_string(),
+            Permission::ReadOrganization => "read:org".to_string(),
+            Permission::UpdateOrganization => "update:org".to_string(),
+            Permission::DeleteOrganization => "delete:org".to_string(),
+            Permission::RequestPermissionForOrganization => "request_permission:org".to_string(),
             Permission::InviteUser => "invite:user".to_string(),
             Permission::UpdateUser => "update:user".to_string(),
             Permission::DeleteUser => "delete:user".to_string(),
