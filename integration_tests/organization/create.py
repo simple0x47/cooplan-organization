@@ -36,8 +36,7 @@ async def create_organization_and_expect_it_as_response():
 
     result = json.loads(serialized_result)
 
-    if not ("Ok" in result):
-        print(f"result: {result}")
+    print(f"result: {result}")
 
     assert ("Ok" in result)
     organization = result["Ok"]
