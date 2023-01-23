@@ -40,6 +40,47 @@
         }
       },
       "max_concurrent_requests": 8
+    },
+    {
+      "id": "user",
+      "queue_consumer": {
+        "queue": {
+          "name": "user",
+          "declare": {
+            "options": {
+              "passive": false,
+              "durable": false,
+              "exclusive": false,
+              "auto_delete": true,
+              "nowait": false
+            },
+            "arguments": {}
+          }
+        },
+        "qos": {
+          "prefetch_count": 10,
+          "options": {
+            "global": true
+          }
+        },
+        "consume": {
+          "options": {
+            "no_local": true,
+            "no_ack": false,
+            "exclusive": true,
+            "nowait": false
+          },
+          "arguments": {
+          }
+        },
+        "acknowledge": {
+          "multiple": false
+        },
+        "reject": {
+          "requeue": false
+        }
+      },
+      "max_concurrent_requests": 8
     }
   ],
   "output": [
