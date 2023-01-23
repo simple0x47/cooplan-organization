@@ -277,6 +277,8 @@ async fn join(
     result
 }
 
+/// Expected parameters:
+/// - **organization_id**: String
 async fn read(
     authorized_token: Token,
     data: Map<String, Value>,
