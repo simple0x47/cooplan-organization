@@ -11,7 +11,7 @@ pub async fn get_code_if_valid(
     let (replier, receiver) = tokio::sync::oneshot::channel();
 
     match storage_request_sender
-        .send(StorageRequest::InvitationRequest(
+        .send(StorageRequest::Invitation(
             InvitationStorageAction::FindByCode {
                 code: invitation_code,
                 replier,

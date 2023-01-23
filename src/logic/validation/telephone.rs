@@ -23,7 +23,7 @@ pub async fn is_telephone_being_used(
     let (replier, listener) = tokio::sync::oneshot::channel();
 
     match storage_request_sender
-        .send(StorageRequest::OrganizationRequest(
+        .send(StorageRequest::Organization(
             OrganizationStorageAction::FindByTelephone {
                 telephone: telephone.to_string(),
                 replier,
