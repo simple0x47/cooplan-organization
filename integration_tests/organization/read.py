@@ -12,7 +12,7 @@ from mongodb_config import ORGANIZATION_DATABASE, ORGANIZATION_COLLECTION, USER_
 TEST_TIMEOUT_AFTER_SECONDS_ENV = "TEST_TIMEOUT_AFTER_SECONDS"
 
 
-async def join_organization_and_expect_it_as_response():
+async def read_organization_as_expected():
     client = MongoClient(os.environ.get(test.TEST_MONGODB_URI_ENV))
 
     EXAMPLE_ORGANIZATION = {
@@ -119,7 +119,7 @@ def restore_mongodb_initial_state():
 async def main():
     result_code = 0
     try:
-        await join_organization_and_expect_it_as_response()
+        await read_organization_as_expected()
     except BaseException as e:
         print(f"Exception: {e}")
         result_code = 1
