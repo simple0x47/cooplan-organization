@@ -10,12 +10,10 @@ pub async fn has_user_no_organization(
     let (replier, receiver) = tokio::sync::oneshot::channel();
 
     match storage_request_sender
-        .send(StorageRequest::UserRequest(
-            UserStorageAction::FindUserById {
-                user_id: user_id.to_string(),
-                replier,
-            },
-        ))
+        .send(StorageRequest::User(UserStorageAction::FindUserById {
+            user_id: user_id.to_string(),
+            replier,
+        }))
         .await
     {
         Ok(_) => (),

@@ -114,7 +114,7 @@ async fn create(
     };
 
     match logic_request_sender
-        .send(LogicRequest::OrganizationRequest(action))
+        .send(LogicRequest::Organization(action))
         .await
     {
         Ok(_) => (),
@@ -239,7 +239,7 @@ async fn join(
     };
 
     match logic_request_sender
-        .send(LogicRequest::OrganizationRequest(action))
+        .send(LogicRequest::Organization(action))
         .await
     {
         Ok(_) => (),
@@ -300,7 +300,7 @@ async fn read(
     };
 
     match logic_request_sender
-        .send(LogicRequest::OrganizationRootRequest(action))
+        .send(LogicRequest::OrganizationRoot(action))
         .await
     {
         Ok(_) => (),

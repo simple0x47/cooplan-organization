@@ -1,7 +1,7 @@
 use async_channel::{Receiver, Sender};
 
 use crate::error::ErrorKind;
-use crate::logic::executors::{organization, organization_root};
+use crate::logic::executors::{organization, organization_root, user};
 use crate::logic::logic_request::LogicRequest;
 use crate::logic::storage_request::StorageRequest;
 
@@ -27,7 +27,7 @@ impl LogicRequestDispatch {
                 Ok(request) => {
                     log::info!("received logic request");
 
-                    let result = match request {
+                    match request {
                         LogicRequest::Organization(organization_action) => {
                             match organization::execute(
                                 organization_action,
@@ -59,7 +59,15 @@ impl LogicRequestDispatch {
                                 }
                             }
                         }
-                        _ => todo!(),
+                        LogicRequest::User(user_action) => {
+                            match user::execute(user_action, &self.storage_request_sender).await {
+                                Ok(_) => (),
+                                Err(error) => {
+                                    log::info!("failed to execute user action: {}", error);
+                                    continue;
+                                }
+                            }
+                        }
                     };
                 }
                 Err(error) => {
