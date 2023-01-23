@@ -72,6 +72,7 @@ async fn request_handler(
     match action.as_str() {
         "create" => create(authorized_token, data, logic_request_sender).await,
         "join" => join(authorized_token, data, logic_request_sender).await,
+        "read" => read(authorized_token, data, logic_request_sender).await,
         _ => {
             return RequestResult::Err(RequestResultError::new(
                 RequestResultErrorKind::MalformedRequest,
