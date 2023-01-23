@@ -10,8 +10,7 @@ pub async fn get_organization_if_exists(
 ) -> Result<Organization, Error> {
     let (replier, receiver) = tokio::sync::oneshot::channel();
 
-    let request =
-        StorageRequest::OrganizationRequest(OrganizationStorageAction::FindById { id, replier });
+    let request = StorageRequest::Organization(OrganizationStorageAction::FindById { id, replier });
 
     match storage_request_sender.send(request).await {
         Ok(_) => (),

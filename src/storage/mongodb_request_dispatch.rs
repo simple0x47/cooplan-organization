@@ -26,21 +26,21 @@ impl MongoDbRequestDispatch {
                     log::info!("received storage request");
 
                     let result = match request {
-                        StorageRequest::OrganizationRequest(action) => {
+                        StorageRequest::Organization(action) => {
                             crate::storage::executors::organization::execute(action, &self.client)
                                 .await
                         }
-                        StorageRequest::OrganizationRootRequest(action) => {
+                        StorageRequest::OrganizationRoot(action) => {
                             crate::storage::executors::organization_root::execute(
                                 action,
                                 &self.client,
                             )
                             .await
                         }
-                        StorageRequest::UserRequest(action) => {
+                        StorageRequest::User(action) => {
                             crate::storage::executors::user::execute(action, &self.client).await
                         }
-                        StorageRequest::InvitationRequest(action) => {
+                        StorageRequest::Invitation(action) => {
                             crate::storage::executors::invitation::execute(action, &self.client)
                                 .await
                         }

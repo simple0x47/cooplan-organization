@@ -10,7 +10,7 @@ pub async fn is_name_already_used(
     let (replier, listener) = tokio::sync::oneshot::channel();
 
     match storage_request_sender
-        .send(StorageRequest::OrganizationRequest(
+        .send(StorageRequest::Organization(
             OrganizationStorageAction::FindByName {
                 name: name.to_string(),
                 replier,

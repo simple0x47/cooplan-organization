@@ -4,8 +4,8 @@ use crate::logic::actions::organization_storage_action::OrganizationStorageActio
 use crate::logic::actions::user_storage_action::UserStorageAction;
 
 pub enum StorageRequest {
-    OrganizationRequest(OrganizationStorageAction),
-    UserRequest(UserStorageAction),
-    InvitationRequest(InvitationStorageAction),
-    OrganizationRootRequest(OrganizationRootStorageAction),
+    Organization(OrganizationStorageAction),
+    User(UserStorageAction),
+    Invitation(InvitationStorageAction),
+    OrganizationRoot(OrganizationRootStorageAction),
 }

@@ -29,7 +29,7 @@ async fn read(
     let (storage_replier, storage_receiver) = tokio::sync::oneshot::channel();
 
     match storage_request_sender
-        .send(StorageRequest::OrganizationRootRequest(
+        .send(StorageRequest::OrganizationRoot(
             OrganizationRootStorageAction::Read {
                 organization_id,
                 replier: storage_replier,

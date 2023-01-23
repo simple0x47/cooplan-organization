@@ -109,7 +109,7 @@ async fn create(
     let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
 
     match storage_request_sender
-        .send(StorageRequest::OrganizationRequest(
+        .send(StorageRequest::Organization(
             OrganizationStorageAction::Create {
                 name,
                 country,
@@ -156,7 +156,7 @@ async fn create(
 
     let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
 
-    let create_user_request = StorageRequest::UserRequest(UserStorageAction::Create {
+    let create_user_request = StorageRequest::User(UserStorageAction::Create {
         id: user_id,
         organization: user_organization,
         replier: storage_replier,
@@ -222,7 +222,7 @@ async fn restore_create_organization(
     let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
 
     match storage_request_sender
-        .send(StorageRequest::OrganizationRequest(
+        .send(StorageRequest::Organization(
             OrganizationStorageAction::Delete {
                 id: organization_id,
                 replier: storage_replier,
@@ -341,7 +341,7 @@ async fn create_user(
     };
 
     let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
-    let create_user_request = StorageRequest::UserRequest(UserStorageAction::Create {
+    let create_user_request = StorageRequest::User(UserStorageAction::Create {
         id: user_id,
         organization: user_organization,
         replier: storage_replier,
@@ -385,11 +385,10 @@ async fn delete_invitation(
     storage_request_sender: &Sender<StorageRequest>,
 ) -> Result<(), Error> {
     let (storage_replier, storage_listener) = tokio::sync::oneshot::channel();
-    let delete_invitation_request =
-        StorageRequest::InvitationRequest(InvitationStorageAction::Delete {
-            code: invitation_code,
-            replier: storage_replier,
-        });
+    let delete_invitation_request = StorageRequest::Invitation(InvitationStorageAction::Delete {
+        code: invitation_code,
+        replier: storage_replier,
+    });
 
     match storage_request_sender.send(delete_invitation_request).await {
         Ok(_) => (),
