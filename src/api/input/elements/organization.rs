@@ -1,4 +1,5 @@
 use crate::logic::actions::organization_logic_action::OrganizationLogicAction;
+use crate::logic::actions::organization_root_logic_action::OrganizationRootLogicAction;
 use crate::logic::logic_request::LogicRequest;
 use async_channel::Sender;
 use cooplan_amqp_api::api::input::input_element;
@@ -270,6 +271,70 @@ async fn join(
             RequestResultErrorKind::InternalFailure,
             format!("failed to receive result from logic: {}", error),
         )),
+    };
+
+    result
+}
+
+async fn read(
+    authorized_token: Token,
+    data: Map<String, Value>,
+    logic_request_sender: Sender<LogicRequest>,
+) -> RequestResult {
+    const READ_ORGANIZATION_ID_KEY: &str = "organization_id";
+
+    let organization_id =
+        match extract_parameter_from_request_data::<String>(&data, READ_ORGANIZATION_ID_KEY) {
+            Ok(invitation_code) => invitation_code,
+            Err(error) => return error,
+        };
+
+    let (replier, receiver) = tokio::sync::oneshot::channel();
+
+    let action = OrganizationRootLogicAction::Read {
+        organization_id,
+        replier,
+    };
+
+    match logic_request_sender
+        .send(LogicRequest::OrganizationRootRequest(action))
+        .await
+    {
+        Ok(_) => (),
+        Err(error) => {
+            return RequestResult::Err(RequestResultError::new(
+                RequestResultErrorKind::InternalFailure,
+                format!(
+                    "failed to send organization root read request to logic: {}",
+                    error
+                ),
+            ))
+        }
+    }
+
+    let result = match receiver.await {
+        Ok(result) => match result {
+            Ok(organization) => match serde_json::to_value(organization) {
+                Ok(value) => RequestResult::Ok(value),
+                Err(error) => RequestResult::Err(RequestResultError::new(
+                    RequestResultErrorKind::InternalFailure,
+                    format!("failed to serialize organization root: {}", error),
+                )),
+            },
+            Err(error) => RequestResult::Err(RequestResultError::new(
+                RequestResultErrorKind::MalformedRequest,
+                format!("failed to read organization root: {}", error),
+            )),
+        },
+        Err(error) => {
+            return RequestResult::Err(RequestResultError::new(
+                RequestResultErrorKind::InternalFailure,
+                format!(
+                    "failed to receive organization root read response from logic: {}",
+                    error
+                ),
+            ))
+        }
     };
 
     result

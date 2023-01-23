@@ -28,7 +28,7 @@ tokio = { version = "1", features = ["full"] }
 
 tokio-executor-trait = "2.1"
 tokio-reactor-trait = "1.1"
-
+futures = "0.3.25"
 async-channel = "1.8.0"
 
 # Token

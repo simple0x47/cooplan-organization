@@ -1,8 +1,9 @@
+use serde::Serialize;
 use std::ops::Sub;
 use std::thread::sleep;
 use std::time::{Duration, SystemTime};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct Invitation {
     pub code: String,
     pub organization_id: String,

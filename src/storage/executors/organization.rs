@@ -228,7 +228,7 @@ async fn find_by_id(
     find_by_key_and_value("_id", id, replier, client).await
 }
 
-async fn find_by_key_and_value<ValueType: Into<Bson>>(
+pub async fn find_by_key_and_value<ValueType: Into<Bson>>(
     key: &str,
     value: ValueType,
     replier: Sender<Result<Option<logic::elements::organization::Organization>, Error>>,

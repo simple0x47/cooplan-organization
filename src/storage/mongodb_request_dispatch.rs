@@ -30,11 +30,19 @@ impl MongoDbRequestDispatch {
                             crate::storage::executors::organization::execute(action, &self.client)
                                 .await
                         }
+                        StorageRequest::OrganizationRootRequest(action) => {
+                            crate::storage::executors::organization_root::execute(
+                                action,
+                                &self.client,
+                            )
+                            .await
+                        }
                         StorageRequest::UserRequest(action) => {
                             crate::storage::executors::user::execute(action, &self.client).await
-                        },
+                        }
                         StorageRequest::InvitationRequest(action) => {
-                            crate::storage::executors::invitation::execute(action, &self.client).await
+                            crate::storage::executors::invitation::execute(action, &self.client)
+                                .await
                         }
                     };
 

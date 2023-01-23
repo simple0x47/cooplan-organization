@@ -12,7 +12,7 @@ Microservice in charge of storing & managing organizations and their users.
   * `join #AUTH (invitation_code) -> Result<Organization, Error>`
     * User must have no other organizations in order to be able to use this functionality.
       <br></br>
-  * `read #AUTH (organization_id) -> Result<Organization, Error>`
+  * `read #AUTH (organization_id) -> Result<OrganizationRoot, Error>`
   <br></br>
   * `update #AUTH (*name, country, address, *telephone) -> Result<(), Error>`
     * User must have the permission to update the organization.
