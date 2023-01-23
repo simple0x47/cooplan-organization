@@ -34,9 +34,7 @@ async def join_organization_and_expect_it_as_response():
         "expires_after": int(time.time()) + 3600,
     }
 
-    client[INVITATION_DATABASE][INVITATION_COLLECTION].insert_one({
-        EXAMPLE_INVITATION
-    })
+    client[INVITATION_DATABASE][INVITATION_COLLECTION].insert_one(EXAMPLE_INVITATION)
 
     EXAMPLE_USER = {
         "id": "example|12345678",
@@ -48,9 +46,7 @@ async def join_organization_and_expect_it_as_response():
         ]
     }
 
-    client[USER_DATABASE][USER_COLLECTION].insert_one({
-        EXAMPLE_USER
-    })
+    client[USER_DATABASE][USER_COLLECTION].insert_one(EXAMPLE_USER)
 
     REQUEST = {
         "header": {
