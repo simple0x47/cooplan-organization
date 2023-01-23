@@ -1,10 +1,10 @@
-use crate::error::Error;
 use crate::logic::actions::user_logic_action::UserLogicAction;
 use crate::logic::logic_request::LogicRequest;
 use async_channel::Sender;
 use cooplan_amqp_api::api::input::input_element;
 use cooplan_amqp_api::api::input::input_element::InputElement;
 use cooplan_amqp_api::api::input::request::{extract_parameter_from_request_data, Request};
+use cooplan_amqp_api::error::Error;
 use cooplan_amqp_api_shared::api::input::request_result::RequestResult;
 use cooplan_amqp_api_shared::api::input::request_result_error::{
     RequestResultError, RequestResultErrorKind,
@@ -13,7 +13,7 @@ use cooplan_lapin_wrapper::config::api::Api;
 use serde_json::{Map, Value};
 use std::sync::Arc;
 
-const ACTIONS: &[&str] = &["get_organization_and_permissions"];
+const ACTIONS: &[&str] = &["read"];
 
 pub fn get(api: &Api) -> Result<InputElement<LogicRequest>, Error> {
     const ELEMENT_ID: &str = "user";
