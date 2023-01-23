@@ -28,7 +28,7 @@ impl LogicRequestDispatch {
                     log::info!("received logic request");
 
                     let result = match request {
-                        LogicRequest::OrganizationRequest(organization_action) => {
+                        LogicRequest::Organization(organization_action) => {
                             match organization::execute(
                                 organization_action,
                                 &self.storage_request_sender,
@@ -42,7 +42,7 @@ impl LogicRequestDispatch {
                                 }
                             }
                         }
-                        LogicRequest::OrganizationRootRequest(organization_root_action) => {
+                        LogicRequest::OrganizationRoot(organization_root_action) => {
                             match organization_root::execute(
                                 organization_root_action,
                                 &self.storage_request_sender,
