@@ -32,4 +32,4 @@ Microservice in charge of storing & managing organizations and their users.
   <br></br>
   * `remove #AUTH (target_user) -> Result<(), Error>`: remove user from the organization.
   <br></br>
-  * `get_user_permissions_and_organization #AUTH () -> Result<User, Error>`
+  * `get_organization_and_permissions (user_id) -> Result<User, Error>`: get the organization and permissions of a user.
