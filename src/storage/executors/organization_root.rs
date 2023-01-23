@@ -124,7 +124,7 @@ async fn get_users_by_organization_id(
         .collection::<User>(storage::elements::user::COLLECTION)
         .find(
             doc! {
-                "organizations.organization_id": organization_id,
+                "organizations.organization_id": organization_id.to_string(),
             },
             None,
         )
