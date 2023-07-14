@@ -87,6 +87,7 @@ async fn main() -> Result<(), Error> {
     match storage::init::initialize(
         config.storage_request_dispatch_instances,
         storage_request_receiver,
+        config.mongodb_uri
     )
     .await
     {

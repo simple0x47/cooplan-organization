@@ -26,5 +26,6 @@
     "state_output_receiver_path": "/tmp/cooplan_definition_provider_state_receiver.sock",
     "state_sender_interval_in_seconds": 15
   },
-  "state_tracking_channel_boundary": 1024
+  "state_tracking_channel_boundary": 1024,
+  "mongodb_uri": ""
 }

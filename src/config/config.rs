@@ -16,6 +16,7 @@ pub struct Config {
     pub amqp_connect_config: AmqpConnectConfig,
     pub state_tracking_config: StateTrackingConfig,
     pub state_tracking_channel_boundary: usize,
+    pub mongodb_uri: String
 }
 
 pub async fn try_read_config(config_file: &str) -> Result<Config, Error> {

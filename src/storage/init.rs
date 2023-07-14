@@ -9,8 +9,9 @@ use mongodb::Client;
 pub async fn initialize(
     concurrent_dispatchers: u16,
     request_receiver: Receiver<StorageRequest>,
+    mongodb_uri: String
 ) -> Result<(), Error> {
-    let config = match mongodb_config::try_generate_config().await {
+    let config = match mongodb_config::try_generate_config(mongodb_uri).await {
         Ok(config) => config,
         Err(error) => return Err(Error::new(ErrorKind::AutoConfigFailure, error.message)),
     };
@@ -31,7 +32,7 @@ pub async fn initialize(
 
     for _ in 0..concurrent_dispatchers {
         let mongodb_request_dispatch =
-            crate::storage::mongodb_request_dispatch::MongoDbRequestDispatch::new(
+            storage::mongodb_request_dispatch::MongoDbRequestDispatch::new(
                 client.clone(),
                 request_receiver.clone(),
             );
