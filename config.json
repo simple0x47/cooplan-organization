@@ -27,5 +27,5 @@
     "state_sender_interval_in_seconds": 15
   },
   "state_tracking_channel_boundary": 1024,
-  "mongodb_uri": ""
+  "mongodb_uri": "mongodb://localhost:27017"
 }
